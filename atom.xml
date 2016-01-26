@@ -4,7 +4,7 @@
   <subtitle><![CDATA[Reading writing and thinking]]></subtitle>
   <link href="/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2015-12-16T09:21:32.446Z</updated>
+  <updated>2016-01-26T09:14:15.075Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -13,6 +13,62 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[RDD论文阅读]]></title>
+    <link href="http://yoursite.com/2015/12/18/RDD-paper/"/>
+    <id>http://yoursite.com/2015/12/18/RDD-paper/</id>
+    <published>2015-12-18T02:26:13.000Z</published>
+    <updated>2016-01-26T09:14:15.075Z</updated>
+    <content type="html"><![CDATA[<p>论文<em><a href="http://people.csail.mit.edu/matei/papers/2012/nsdi_spark.pdf" target="_blank" rel="external">Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing</a></em> 出自UC Berkeley实验室Spark项目的作者，是Spark中重要概念RDD的研究论文。<br><a id="more"></a></p>
+<h2 id="u4E3A_u4EC0_u4E48_u63D0_u51FARDD_uFF1F"><a href="#u4E3A_u4EC0_u4E48_u63D0_u51FARDD_uFF1F" class="headerlink" title="为什么提出RDD？"></a>为什么提出RDD？</h2><p>现有的集群计算框架(如MapReduce)都提供访问集群计算资源的抽象，但缺少利用分布式内存的抽象。这使得它们不能高效的适用于一类重要的新兴应用，这类应用的特点是复用跨多个计算过程的中间结果。数据复用有两种典型的应用场景：</p>
+<ol>
+<li>迭代机器学习和图算法；</li>
+<li>交互式数据挖掘，在相同的数据子集上运行多次即席查询(ad-hoc query)；</li>
+</ol>
+<p>当前的大多数框架通过将数据写入外部存储系统的方式实现计算间的数据复用(例如：在两个MapReduce job之间)。数据复制，磁盘I/O和序列化需要大量时间开销，主导了应用的执行时间。因此作者提出一种称为resilient distributed datasets(RDDs)的抽象，在广泛的应用中能有效实现数据复用。RDDs是容错的，并行数据结构，能让用户显式的将计算中间结果保持在内存中；控制它们的分区以优化数据位置；使用丰富的操作符操作它们。设计RDDs的主要挑战是定义一个能够提供有效容错的编程接口。RDDs提供了基于粗粒度转换的接口(例如：map, filter, join)，这些转换将相同的操作应用到许多数据项上。这也体现了RDDs的两个显著特点：</p>
+<ol>
+<li><strong>并行</strong>——转换将相同的操作应用到许多数据条目上。</li>
+<li><strong>容错</strong>——通过记录用在数据集上的转换(数据沿袭)实现容错。<br>如果RDD的一个分区丢失，RDD有足够的信息知道它是如何从其他RDD推导过来的，从而可以重新计算得到该分区。因此丢失的数据能被恢复，而且通常很快，不需要高昂的复制。</li>
+</ol>
+<h2 id="u5F39_u6027_u5206_u5E03_u5F0F_u6570_u636E_u96C6_28RDDs_29"><a href="#u5F39_u6027_u5206_u5E03_u5F0F_u6570_u636E_u96C6_28RDDs_29" class="headerlink" title="弹性分布式数据集(RDDs)"></a>弹性分布式数据集(RDDs)</h2><p>一个RDD是一个只读，分区的记录集合。RDDs只能通过对(1)稳定存储上的数据或(2)其他RDDs的确定操作来创建。RDDs不需要在所有时间都是具体存在的。因为一个RDD有足够的信息知道它如何从其他的数据集推导出来(它的沿袭)，最终从稳定存储上的数据计算出它的分区。这是一个强大的特性：本质上，程序不会引用到失效后无法重构的RDD。用户能控制RDDs的两个方面：</p>
+<ol>
+<li>持久性(persistence)：指定要复用的RDDs并选择存储策略(如存储在内存)</li>
+<li>分区(partitioning)：要求RDDs基于每条记录中的key将元素分配到不同的机器。</li>
+</ol>
+<p>RDDs最适合对数据集的全部元素进行相同操作的批处理应用。在这种情形下，RDDs能有效的将每个转换记为沿袭图谱中的一步，并且能恢复丢失的分区而不需要记录大量数据。RDDs不适合对共享状态做异步细粒度更新的应用，如web应用的存储系统，增量web爬虫。RDDs的目标是提供对批处理分析的有效编程模型。</p>
+<h2 id="Spark_u7F16_u7A0B_u63A5_u53E3"><a href="#Spark_u7F16_u7A0B_u63A5_u53E3" class="headerlink" title="Spark编程接口"></a>Spark编程接口</h2><p>选择Scala是由于它同时具备简洁(交互使用很方便)和高效(静态类型)的特点。<br>Spark使用Scala实现RDD的API。下表中列出了Spark中主要的RDD <em>transformations</em>和<em>actions</em>操作。<em>transformations</em>定义新RDD是惰性操作，<em>actions</em>启动计算返回结果给程序或写数据到外部存储。一些操作如<em>join</em>只用于key-value对的RDD。<em>persist</em>方法表明要在后续的操作中复用RDD，Spark默认将RDDs保持在内存中， 但是如果RAM不足会溢写到硬盘。</p>
+<table><tr><th>Ops</th><th>Funs</th></tr><tr><td style="font-weight:bold">Transformations</td><td style="font-style:italic">map(f:T=&gt;U) : RDD[T]=&gt;RDD[U]<br>filter(f:T=&gt;Bool) : RDD[T]=&gt;RDD[T]<br>flatMap(f:T=&gt;Seq[U]) : RDD[T]=&gt;RDD[U]<br>sample(fraction: Float) : RDD[T]=&gt;RDD[T] (Deterministic sampling)<br>groupByKey() : RDD[(K,V)]=&gt;RDD[(K, Seq[V])]<br>reduceByKey(f:(V,V)=&gt;V) : RDD[(K,V)]=&gt;RDD[(K,V)]<br>union() : (RDD[T]=&gt;RDD[T])=&gt;RDD[T]<br>join() : (RDD[(K,V)],RDD[(K,W)])=&gt;RDD[(K,(V,W))]<br>cogroup() : (RDD[T],RDD[U])=&gt;RDD[(T,U)]<br>crossProduct() : (RDD[T],RDD[U])=&gt;RDD[(T,U)]<br>mapValues(f:V=&gt;W) : RDD[(K,V)]=&gt;RDD[(K,W)] (Preserves partitioning)<br>sort(c:Comparator[K]) : RDD[(K,V)]=&gt;RDD[(K,V)]<br>partitionBy(p:Partitioner[K]) : RDD[(K,V)]=&gt;RDD[(K,V)]</td></tr><tr><td style="font-weight:bold">Actions</td><td style="font-style:italic">count() : RDD[T]=&gt;Long<br>collect() : RDD[T]=&gt;Seq[T]<br>reduce(f:(T,T)=&gt;T) : RDD[T]=&gt;T<br>lookup(k:K) : RDD[(K,V)]=&gt;Seq[V] (On hash/range partitioned RDDs)<br>save(path:String) : Outputs RDD to a storage system, e.g.,HDFS</td></tr></table>
+
+<h2 id="RDDs_u7684_u8868_u793A"><a href="#RDDs_u7684_u8868_u793A" class="headerlink" title="RDDs的表示"></a>RDDs的表示</h2><p>通过公用接口表示每个RDD，这些接口体现五个方面的信息：</p>
+<ol>
+<li>分区集合，是数据集的原子块；</li>
+<li>父RDDs的依赖集合；</li>
+<li>基于父RDD计算数据集的函数；</li>
+<li>分区模式的元数据；</li>
+<li>数据位置；</li>
+</ol>
+<p><table><tr><th>操作</th><th>含义</th></tr><tr><td>partitions()</td><td>返回分区对象列表</td></tr><tr><td>preferredLocations(p)</td><td>根据数据局部性给出最快访问到分区p的节点</td></tr><tr><td>dependencies()</td><td>返回依赖列表</td></tr><tr><td>iterator(p,parentIters)</td><td>迭代父分区计算得到分区p的元素</td></tr><tr><td>partitioner()</td><td>返回指定RDD是否为hash/range分区的元数据</td></tr></table><br>在设计上述接口中最重要的一个问题是如何表示RDDs之间的依赖。作者将依赖分成两类：</p>
+<ol>
+<li>窄依赖：每个父RDD分区至多被一个子RDD分区使用；</li>
+<li>宽依赖：多个子分区会依赖一个父RDD分区；</li>
+</ol>
+<p>例如，<em>map</em>导致窄依赖，<em>join</em>导致宽依赖。这种区分非常有用。第一，窄依赖允许在一个集群节点上流水式执行，它能计算全部的父分区。相反，宽依赖要求来自所有父分区的数据都可用并且使用像MapReduce这样的操作进行跨节点的洗牌。第二，在一个节点失效后，恢复窄依赖的RDD更高效，因为只有丢失的父分区需要被重新计算，并且它们可以在不同的节点并行的计算。相反，在具有宽依赖的沿袭图谱中，单个节点失效会导致丢失一些来自RDD全部祖先的分区，因此要求计算重新执行。一些RDD实现的概述：<br><strong>HDFS files:</strong> 输入RDDs是HDFS中的文件。对于这些RDDs,<em>partitions</em>返回针对每个文件块的一个分区(带有块的偏移存储在每个分区对象中)；<em>preferredLocations</em>给出块所在的节点；<em>iterator</em>读取块。<br><strong>map:</strong> 在任何RDD上调用<em>map</em>返回MappedRDD对象。这个对象有和父RDD相同的分区和首选位置，但是在它的<em>iterator</em>方法中将传递给<em>map</em>的函数应用到父RDD的记录上。<br><strong>union:</strong> 在两个RDDs上调用union返回一个RDD，它的分区是两个父RDD的分区的并。每个子分区是从窄依赖的父分区计算得来的。<br><strong>sample:</strong> Sampling与Mapping类似，除了RDD存储了对每个分区到决定的采样父记录随机数生成器种子。<br><strong>join:</strong> 连接两个RDDs会导致两个窄依赖(如果它们都是用相同partitioner进行hash/range分区的)，或者两个宽依赖，或一个混合(如果一个父RDD有partitioner但另一个没有)。在其他情况，输出RDD有一个partitioner(从父RDD继承的或默认的hash partitioner)。</p>
+<p><img src="http://7xpf9w.com1.z0.glb.clouddn.com/RDD%20deps.png" alt=""></p>
+<h2 id="u5B9E_u73B0"><a href="#u5B9E_u73B0" class="headerlink" title="实现"></a>实现</h2><p>作者用14000行Scala代码实现了Spark。系统运行在Mesos集群管理器上。Spark能从Hadoop输入源(例如HDFS、HBase)读取数据。</p>
+<h3 id="u4EFB_u52A1_u8C03_u5EA6"><a href="#u4EFB_u52A1_u8C03_u5EA6" class="headerlink" title="任务调度"></a>任务调度</h3>]]></content>
+    <summary type="html">
+    <![CDATA[<p>论文<em><a href="http://people.csail.mit.edu/matei/papers/2012/nsdi_spark.pdf">Resilient Distributed Datasets: A Fault-Tolerant Abstraction for In-Memory Cluster Computing</a></em> 出自UC Berkeley实验室Spark项目的作者，是Spark中重要概念RDD的研究论文。<br>]]>
+    
+    </summary>
+    
+      <category term="RDD" scheme="http://yoursite.com/tags/RDD/"/>
+    
+      <category term="Spark" scheme="http://yoursite.com/tags/Spark/"/>
+    
+      <category term="Spark" scheme="http://yoursite.com/categories/Spark/"/>
+    
+  </entry>
   
   <entry>
     <title><![CDATA[Hello World]]></title>
