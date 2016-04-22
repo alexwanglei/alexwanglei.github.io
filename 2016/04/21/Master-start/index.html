@@ -41,7 +41,7 @@
 <link href="/css/main.css?v=5.0.0" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="Spark," />
 
 
 
@@ -59,16 +59,16 @@
 
 
 
-<meta name="description" content="经过快一个月的折腾，总算把个人博客搭起来了。早就有建立个人博客的想法了，就是一直拖着没有付诸实践。终于趁着轮岗时非常清闲，把这件事办了。">
+<meta name="description" content="Spark Standalone部署模式是主从结构，有一个主节点，其余为从节点，主节点机器上需要启动Master服务。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://yoursite.com/2015/12/16/hello-world/index.html">
+<meta property="og:title" content="Master启动过程">
+<meta property="og:url" content="http://yoursite.com/2016/04/21/Master-start/index.html">
 <meta property="og:site_name" content="Alexlei's Blog">
-<meta property="og:description" content="经过快一个月的折腾，总算把个人博客搭起来了。早就有建立个人博客的想法了，就是一直拖着没有付诸实践。终于趁着轮岗时非常清闲，把这件事办了。">
-<meta property="og:updated_time" content="2015-12-16T09:21:32.446Z">
+<meta property="og:description" content="Spark Standalone部署模式是主从结构，有一个主节点，其余为从节点，主节点机器上需要启动Master服务。">
+<meta property="og:updated_time" content="2016-04-21T05:53:13.634Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hello World">
-<meta name="twitter:description" content="经过快一个月的折腾，总算把个人博客搭起来了。早就有建立个人博客的想法了，就是一直拖着没有付诸实践。终于趁着轮岗时非常清闲，把这件事办了。">
+<meta name="twitter:title" content="Master启动过程">
+<meta name="twitter:description" content="Spark Standalone部署模式是主从结构，有一个主节点，其余为从节点，主节点机器上需要启动Master服务。">
 
 
 
@@ -86,7 +86,7 @@
   };
 </script>
 
-  <title> Hello World | Alexlei's Blog </title>
+  <title> Master启动过程 | Alexlei's Blog </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
@@ -252,7 +252,7 @@
             
             
               
-                Hello World
+                Master启动过程
               
             
           </h1>
@@ -264,8 +264,8 @@
               <i class="fa fa-calendar-o"></i>
             </span>
             <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2015-12-16T17:21:32+08:00" content="2015-12-16">
-              2015-12-16
+            <time itemprop="dateCreated" datetime="2016-04-21T10:26:44+08:00" content="2016-04-21">
+              2016-04-21
             </time>
           </span>
 
@@ -278,8 +278,8 @@
               <span class="post-meta-item-text">分类于</span>
               
                 <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/生活/" itemprop="url" rel="index">
-                    <span itemprop="name">生活</span>
+                  <a href="/categories/Spark/" itemprop="url" rel="index">
+                    <span itemprop="name">Spark</span>
                   </a>
                 </span>
 
@@ -294,8 +294,8 @@
             
               <span class="post-comments-count">
                 &nbsp; | &nbsp;
-                <a href="/2015/12/16/hello-world/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/12/16/hello-world/" itemprop="commentsCount"></span>
+                <a href="/2016/04/21/Master-start/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/21/Master-start/" itemprop="commentsCount"></span>
                 </a>
               </span>
             
@@ -316,26 +316,55 @@
       
 
       
-        <p>经过快一个月的折腾，总算把个人博客搭起来了。早就有建立个人博客的想法了，就是一直拖着没有付诸实践。终于趁着轮岗时非常清闲，把这件事办了。<a id="more"></a></p>
-<p>中间走了不少弯路。最初是想自己开发一个博客网站，本着快速，简单的原则，选择用Python的<a href="http://flask.pocoo.org/" target="_blank" rel="external">Flask</a>框架来实现，发现<a href="http://flask.pocoo.org/" target="_blank" rel="external">Flask</a>严重依赖各种各样的扩展模块来实现许多常用的web功能，而安装扩展模块时就容易出现版本兼容的问题，让人很是不爽，遂弃之。由于之前用过PHP的<a href="http://laravel.com/" target="_blank" rel="external">Laravel</a>框架，感觉很方便，于是又投向Laravel框架。<a href="http://laravel.com/" target="_blank" rel="external">Laravel</a>框架已经包括了很多web常用功能模块，因此很快速的搭起了网站。前台的几个页面和后台的文章管理都有了，然后又遇到问题了，个人博客也不能太丑了，想找个<a href="http://bootstrap.evget.com/" target="_blank" rel="external">Bootstrap</a>的博客模板，找来找去都不满意，奈何不会前端技术。从知乎上看到很多人推荐用<a href="https://pages.github.com/" target="_blank" rel="external">GitHub Pages</a> + <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>建立个人博客，试了一下，发现既不用租服务器，也不用写代码，还有很多漂亮的博客主题。用最简单的方法解决了我的问题，这才是我需要的。于是这个博客就诞生了，我用了<a href="https://github.com/iissnan/hexo-theme-next" target="_blank" rel="external">NexT.Pisces</a>主题，简洁明了。博客还有许多细节需要慢慢完善。</p>
-<p>建立这个博客主要用来记录平时工作中学习到的知识和技术，督促自己不断的学习与进步。也会写一些生活中的感悟与思考。</p>
+        <p>Spark Standalone部署模式是主从结构，有一个主节点，其余为从节点，主节点机器上需要启动Master服务。<br><a id="more"></a></p>
+<h2 id="u542F_u52A8Master_u7684shell_u811A_u672C_3A_start-master-sh"><a href="#u542F_u52A8Master_u7684shell_u811A_u672C_3A_start-master-sh" class="headerlink" title="启动Master的shell脚本: start-master.sh"></a>启动Master的shell脚本: start-master.sh</h2><p>运行start-master.sh启动spark master守护进程。脚本首先载入<strong><em>sbin/spark-config.sh</em></strong>和<strong><em>bin/load-spark-env.sh</em></strong>:</p>
+<ul>
+<li>spark-config.sh配置spark_home, spark_conf环境变量，指向对应的目录。</li>
+<li>load-spark-env.sh载入conf/spark-env.sh脚本，spark-env.sh中可以配置各种环境变量和依赖的lib路径。</li>
+</ul>
+<p>然后设置spark master的端口为7077和IP为hostname，以及master webui的端口为8080。最后调用spark-deamon.sh脚本。</p>
+<figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">. <span class="string">"<span class="variable">$sbin</span>/spark-config.sh"</span> </span><br><span class="line"></span><br><span class="line">. <span class="string">"<span class="variable">$SPARK_PREFIX</span>/bin/load-spark-env.sh"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ <span class="string">"<span class="variable">$SPARK_MASTER_PORT</span>"</span> = <span class="string">""</span> ]; then</span><br><span class="line">  SPARK_MASTER_PORT=<span class="number">7077</span></span><br><span class="line">fi</span><br><span class="line"><span class="keyword">if</span> [ <span class="string">"<span class="variable">$SPARK_MASTER_IP</span>"</span> = <span class="string">""</span> ]; then</span><br><span class="line">	  SPARK_MASTER_IP=`hostname`</span><br><span class="line">fi</span><br><span class="line"><span class="keyword">if</span> [ <span class="string">"<span class="variable">$SPARK_MASTER_WEBUI_PORT</span>"</span> = <span class="string">""</span> ]; then</span><br><span class="line">  SPARK_MASTER_WEBUI_PORT=<span class="number">8080</span></span><br><span class="line">fi</span><br><span class="line"></span><br><span class="line"><span class="string">"<span class="variable">$sbin</span>"</span>/spark-daemon.sh start org.apache.spark.deploy.master.Master <span class="number">1</span> </span><br><span class="line">--ip <span class="variable">$SPARK_MASTER_IP</span> --port <span class="variable">$SPARK_MASTER_PORT</span> </span><br><span class="line">--webui-port <span class="variable">$SPARK_MASTER_WEBUI_PORT</span> <span class="variable">$ORIGINAL_ARGS</span></span><br></pre></td></tr></table></figure>
+<h2 id="u542F_u52A8_u5B88_u62A4_u8FDB_u7A0B_u7684_u811A_u672C_3A_spark-daemon-sh"><a href="#u542F_u52A8_u5B88_u62A4_u8FDB_u7A0B_u7684_u811A_u672C_3A_spark-daemon-sh" class="headerlink" title="启动守护进程的脚本: spark-daemon.sh"></a>启动守护进程的脚本: spark-daemon.sh</h2><p>该脚本的用法：<br><figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">usage=<span class="string">"Usage: spark-daemon.sh [--config &lt;conf-dir&gt;] (start|stop|status) &lt;spark-command&gt; &lt;spark-instance-number&gt; &lt;args...&gt;"</span></span><br></pre></td></tr></table></figure></p>
+<p>脚本先做一些准备工作，设置log和pid，然后根据参数调用spark-class脚本，最终执行的命令为：<br><figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bin/spark-class org.apache.spark.deploy.master.Master --ip hostname --port <span class="number">7077</span> --webui-port <span class="number">8080</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="u542F_u52A8_u5177_u4F53scala_u7C7B_u7684_u811A_u672C_3A_spark-class-sh"><a href="#u542F_u52A8_u5177_u4F53scala_u7C7B_u7684_u811A_u672C_3A_spark-class-sh" class="headerlink" title="启动具体scala类的脚本: spark-class.sh"></a>启动具体scala类的脚本: spark-class.sh</h2><p>该脚本的用法：<br><figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"Usage: spark-class &lt;class&gt; [&lt;args&gt;]"</span></span><br></pre></td></tr></table></figure></p>
+<p>脚本设置java运行程序：<code>RUNNER=&quot;${JAVA_HOME}/bin/java&quot;</code> ，然后准备scala环境和库，以及各种依赖的jar包。最后运行java命令执行<code>org.apache.spark.deploy.master.Master</code>类的main方法。<br> <figure class="highlight ps"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec /usr/java/latest/bin/java -cp ：各种jar包： -XX:MaxPermSize=<span class="number">128</span>m -Dspark.akka.logLifecycleEvents=true -Xms512m -Xmx512m org.apache.spark.deploy.master.Master --ip hadoop01 --port <span class="number">7077</span> --webui-port <span class="number">8080</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="Master_u5B88_u62A4_u8FDB_u7A0B_u7684scala_u7C7B_3A_org-apache-spark-deploy-master-Master"><a href="#Master_u5B88_u62A4_u8FDB_u7A0B_u7684scala_u7C7B_3A_org-apache-spark-deploy-master-Master" class="headerlink" title="Master守护进程的scala类: org.apache.spark.deploy.master.Master"></a>Master守护进程的scala类: org.apache.spark.deploy.master.Master</h2><p>Master类伴生对象的main方法是程序执行入口：首先将参数包装成MasterArguments对象，然后调用<strong>startSystemAndActor</strong>方法。<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span>(</span>argStrings: <span class="type">Array</span>[<span class="type">String</span>]) &#123;</span><br><span class="line">  <span class="type">SignalLogger</span>.register(log)</span><br><span class="line">  <span class="keyword">val</span> conf = <span class="keyword">new</span> <span class="type">SparkConf</span></span><br><span class="line">  <span class="keyword">val</span> args = <span class="keyword">new</span> <span class="type">MasterArguments</span>(argStrings, conf)</span><br><span class="line">  <span class="keyword">val</span> (actorSystem, _, _, _) = startSystemAndActor(args.host, args.port,args.webUiPort, conf)</span><br><span class="line">  actorSystem.awaitTermination()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>startSystemAndActor方法启动Master，并返回一个四元组：</p>
+<ol>
+<li>Master actor system</li>
+<li>绑定的端口</li>
+<li>web UI绑定的端口</li>
+<li>REST服务绑定的端口，如果有</li>
+</ol>
+<p>代码<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">startSystemAndActor</span>(</span></span><br><span class="line">  host: <span class="type">String</span>,</span><br><span class="line">  port: <span class="type">Int</span>,</span><br><span class="line">  webUiPort: <span class="type">Int</span>,</span><br><span class="line">  conf: <span class="type">SparkConf</span>): (<span class="type">ActorSystem</span>, <span class="type">Int</span>, <span class="type">Int</span>, <span class="type">Option</span>[<span class="type">Int</span>]) = &#123;</span><br><span class="line">  <span class="keyword">val</span> securityMgr = <span class="keyword">new</span> <span class="type">SecurityManager</span>(conf)</span><br><span class="line">  <span class="keyword">val</span> (actorSystem, boundPort) = <span class="type">AkkaUtils</span>.createActorSystem(systemName, host, port, conf = conf,securityManager = securityMgr)</span><br><span class="line">  <span class="keyword">val</span> actor = actorSystem.actorOf(<span class="type">Props</span>(classOf[<span class="type">Master</span>], host, boundPort, webUiPort, securityMgr, conf), actorName)</span><br><span class="line">  <span class="keyword">val</span> timeout = <span class="type">RpcUtils</span>.askTimeout(conf)</span><br><span class="line">  <span class="keyword">val</span> portsRequest = actor.ask(<span class="type">BoundPortsRequest</span>)(timeout)</span><br><span class="line">  <span class="keyword">val</span> portsResponse = <span class="type">Await</span>.result(portsRequest, timeout).asInstanceOf[<span class="type">BoundPortsResponse</span>]</span><br><span class="line">  (actorSystem, boundPort, portsResponse.webUIPort, portsResponse.restPort)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过actorSystem.actorOf方法创建Master的actor对象，Master类继承了Actor，因此Master是Akka中的通信角色。Actor创建时，会先运行preStart方法，在Master的preStart方法中会启动一些其他的组件。<br>Master Actor启动后，就会等待接收来自其他Actor的消息，对不同的消息作出相应的响应动作。</p>
 
       
     </div>
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag">#Spark</a>
+          
+        </div>
+      
 
       
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2015/12/18/RDD-paper/" rel="next" title="RDD论文阅读">
+                <i class="fa fa-chevron-left"></i> RDD论文阅读
+              </a>
+            
           </div>
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2015/12/18/RDD-paper/" rel="prev" title="RDD论文阅读">
-                RDD论文阅读 <i class="fa fa-chevron-right"></i>
+              <a href="/2016/04/21/Slave-start/" rel="prev" title="Slave启动过程">
+                Slave启动过程 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -362,8 +391,8 @@
           
   <div class="comments" id="comments">
     
-      <div class="ds-thread" data-thread-key="2015/12/16/hello-world/"
-           data-title="Hello World" data-url="http://yoursite.com/2015/12/16/hello-world/">
+      <div class="ds-thread" data-thread-key="2016/04/21/Master-start/"
+           data-title="Master启动过程" data-url="http://yoursite.com/2016/04/21/Master-start/">
       </div>
     
   </div>
@@ -479,7 +508,7 @@
               
             
             
-              <p class="post-toc-empty">此文章未包含目录</p>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#u542F_u52A8Master_u7684shell_u811A_u672C_3A_start-master-sh"><span class="nav-number">1.</span> <span class="nav-text">启动Master的shell脚本: start-master.sh</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#u542F_u52A8_u5B88_u62A4_u8FDB_u7A0B_u7684_u811A_u672C_3A_spark-daemon-sh"><span class="nav-number">2.</span> <span class="nav-text">启动守护进程的脚本: spark-daemon.sh</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#u542F_u52A8_u5177_u4F53scala_u7C7B_u7684_u811A_u672C_3A_spark-class-sh"><span class="nav-number">3.</span> <span class="nav-text">启动具体scala类的脚本: spark-class.sh</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Master_u5B88_u62A4_u8FDB_u7A0B_u7684scala_u7C7B_3A_org-apache-spark-deploy-master-Master"><span class="nav-number">4.</span> <span class="nav-text">Master守护进程的scala类: org.apache.spark.deploy.master.Master</span></a></li></ol></div>
             
           </div>
           <div class="post-toc-indicator-bottom post-toc-indicator">

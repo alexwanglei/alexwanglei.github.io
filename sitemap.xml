@@ -2,6 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/2016/04/21/Slave-start/</loc>
+    <lastmod>2016-04-22T07:30:39.965Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/21/Master-start/</loc>
+    <lastmod>2016-04-21T05:53:13.634Z</lastmod>
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2015/12/18/RDD-paper/</loc>
     <lastmod>2016-01-27T07:37:59.280Z</lastmod>
   </url>
