@@ -2,6 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/2016/04/26/RDD-to-task/</loc>
+    <lastmod>2016-04-27T08:41:30.085Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/25/application-execution/</loc>
+    <lastmod>2016-04-26T07:14:45.232Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/25/Submit-application-1/</loc>
+    <lastmod>2016-04-25T08:16:48.670Z</lastmod>
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2016/04/21/Slave-start/</loc>
     <lastmod>2016-04-22T07:30:39.965Z</lastmod>
   </url>
