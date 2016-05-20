@@ -32,13 +32,36 @@
 
 
 
-  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
 
 
 
 <link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.0.0" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
   <meta name="keywords" content="RDD,Spark," />
@@ -52,7 +75,7 @@
 
 
 
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.0" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
 
 
 
@@ -79,7 +102,7 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     scheme: 'Pisces',
-    sidebar: '[object Object]',
+    sidebar: {"position":"left","display":"post"},
     fancybox: true,
     motion: true,
     duoshuo: {
@@ -107,6 +130,10 @@
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
+
+
+
+
 
 
 
@@ -145,7 +172,7 @@
   
 
   
-    <ul id="menu" class="menu menu-left">
+    <ul id="menu" class="menu">
       
         
         <li class="menu-item menu-item-home">
@@ -189,10 +216,10 @@
       
 
       
-      
-      
         <li class="menu-item menu-item-search">
-          <a href="#" class="st-search-show-outputs">
+          
+            <a href="#" class="st-search-show-outputs">
+          
             
               <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
             
@@ -308,6 +335,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -369,6 +398,18 @@
 <h4 id="u5185_u5B58_u7BA1_u7406"><a href="#u5185_u5B58_u7BA1_u7406" class="headerlink" title="内存管理"></a>内存管理</h4><p>Spark提供三种可选的RDD持久化存储策略：(1)以反序列化的Java对象形式存储在内存中；(2)以序列化的数据存储在内存中；(3)存储在磁盘上。第一种提供最快的读取性能，因为Java虚拟机可以原生地访问每个RDD元素。第二种让用户在空间受限的时候，以损失较低性能的代价，选择比Java对象图更加存储高效的表示。第三种适用于RDD太大而无法维持在内存中，但每次使用重新计算代价又非常大的情况。为了管理有限可用的内存，在RDDs的级别使用LRU淘汰策略。当计算出一个新RDD分区却没有足够的空间存储它时，淘汰最近最少访问<strong>RDD</strong>的一个分区。这样就保持旧的分区在内存中以防止来自同一个RDD的分区循环的进出内存。其中重要性在于大多数操作都是在整个RDD上运行任务，因此已经在内存中的分区很可能将来还会被用到。</p>
 <h4 id="u68C0_u67E5_u70B9_u652F_u6301"><a href="#u68C0_u67E5_u70B9_u652F_u6301" class="headerlink" title="检查点支持"></a>检查点支持</h4><p>尽管在RDDs失效后总是可以使用沿袭来恢复，但是对于具有长沿袭链的RDDs这种恢复可能很耗时。因此对一些RDDs在稳定存储上做检查点是很有用的。通常检查点用在包含宽依赖的长沿袭图谱的RDDs上。在这种情况下，集群中一个节点的失效会导致丢失来自每个父RDD的数据分片，从而必须全部重新计算。相反，对于具有窄依赖的RDDs是不值得做检查点的。Spark当前提供了做检查点的API(一个对<em>persist</em>的REPLICATE标记)，由用户决定对哪个数据做检查点。最后，值得注意的是RDDs的只读特性使得做检查点要比通常的共享内存更加简单。因为不用关心一致性问题，RDDs能在后台被写出，不需要程序暂停或分布式快照方案。</p>
 
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
       
     </div>
 
@@ -469,24 +510,28 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">9</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
 
-          <div class="site-state-item site-state-categories">
-            <a href="/categories">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">分类</span>
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
               </a>
-          </div>
+            </div>
+          
 
-          <div class="site-state-item site-state-tags">
-            <a href="/tags">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">标签</span>
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
               </a>
-          </div>
+            </div>
+          
 
         </nav>
 
@@ -503,18 +548,20 @@
           
             
               <span class="links-of-author-item">
-                <a href="https://github.com/alexwanglei" target="_blank">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
                   
-                    <i class="fa fa-github"></i> GitHub
+                    <i class="fa fa-github"></i>
                   
+                  GitHub
                 </a>
               </span>
             
               <span class="links-of-author-item">
-                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
                   
-                    <i class="fa fa-globe"></i> Zhihu
+                    <i class="fa fa-globe"></i>
                   
+                  Zhihu
                 </a>
               </span>
             
@@ -524,17 +571,13 @@
         
         
 
-        <div class="links-of-author motion-element">
-          
-        </div>
+        
+        
 
       </section>
 
       
         <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc-indicator-top post-toc-indicator">
-            <i class="fa fa-angle-double-up"></i>
-          </div>
           <div class="post-toc">
             
               
@@ -542,9 +585,6 @@
             
               <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#u4E3A_u4EC0_u4E48_u63D0_u51FARDD_uFF1F"><span class="nav-number">1.</span> <span class="nav-text">为什么提出RDD？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#u5F39_u6027_u5206_u5E03_u5F0F_u6570_u636E_u96C6_28RDDs_29"><span class="nav-number">2.</span> <span class="nav-text">弹性分布式数据集(RDDs)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Spark_u7F16_u7A0B_u63A5_u53E3"><span class="nav-number">3.</span> <span class="nav-text">Spark编程接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#u5982_u4F55_u8868_u793ARDDs"><span class="nav-number">4.</span> <span class="nav-text">如何表示RDDs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RDDs_u7684_u5B9E_u73B0"><span class="nav-number">5.</span> <span class="nav-text">RDDs的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#u4EFB_u52A1_u8C03_u5EA6"><span class="nav-number">5.0.1.</span> <span class="nav-text">任务调度</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#u89E3_u91CA_u5668_u96C6_u6210"><span class="nav-number">5.0.2.</span> <span class="nav-text">解释器集成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#u5185_u5B58_u7BA1_u7406"><span class="nav-number">5.0.3.</span> <span class="nav-text">内存管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#u68C0_u67E5_u70B9_u652F_u6301"><span class="nav-number">5.0.4.</span> <span class="nav-text">检查点支持</span></a></li></ol></li></ol></li></ol></div>
             
-          </div>
-          <div class="post-toc-indicator-bottom post-toc-indicator">
-            <i class="fa fa-angle-double-down"></i>
           </div>
         </section>
       
@@ -564,7 +604,7 @@
   &copy; 
   <span itemprop="copyrightYear">2016</span>
   <span class="with-love">
-    <i class="icon-next-heart fa fa-heart"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Alex Lei</span>
 </div>
@@ -580,220 +620,85 @@
   </a>
 </div>
 
+        
 
-
+        
       </div>
     </footer>
 
-    <div class="back-to-top"></div>
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
   </div>
 
   
 
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
 
   
 
 
 
+  
   <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
 
+  
   <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
 
+  
   <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.0.0"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.0.0"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
 
 
 
   
   
-<script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.0"></script>
 
-<script type="text/javascript" id="sidebar.toc.highlight">
-  $(document).ready(function () {
-    var tocSelector = '.post-toc';
-    var $tocSelector = $(tocSelector);
-    var activeCurrentSelector = '.active-current';
 
-    $tocSelector
-      .on('activate.bs.scrollspy', function () {
-        var $currentActiveElement = $(tocSelector + ' .active').last();
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
 
-        removeCurrentActiveClass();
-        $currentActiveElement.addClass('active-current');
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
 
-        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
-      })
-      .on('clear.bs.scrollspy', function () {
-        removeCurrentActiveClass();
-      });
 
-    function removeCurrentActiveClass () {
-      $(tocSelector + ' ' + activeCurrentSelector)
-        .removeClass(activeCurrentSelector.substring(1));
-    }
 
-    function processTOC () {
-      getTOCMaxHeight();
-      toggleTOCOverflowIndicators();
-    }
-
-    function getTOCMaxHeight () {
-      var height = $('.sidebar').height() -
-                   $tocSelector.position().top -
-                   $('.post-toc-indicator-bottom').height();
-
-      $tocSelector.css('height', height);
-
-      return height;
-    }
-
-    function toggleTOCOverflowIndicators () {
-      tocOverflowIndicator(
-        '.post-toc-indicator-top',
-        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
-      );
-
-      tocOverflowIndicator(
-        '.post-toc-indicator-bottom',
-        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
-      )
-    }
-
-    $(document).on('sidebar.motion.complete', function () {
-      processTOC();
-    });
-
-    $('body').scrollspy({ target: tocSelector });
-    $(window).on('resize', function () {
-      if ( $('.sidebar').hasClass('sidebar-active') ) {
-        processTOC();
-      }
-    });
-
-    onScroll($tocSelector);
-
-    function onScroll (element) {
-      element.on('mousewheel DOMMouseScroll', function (event) {
-          var oe = event.originalEvent;
-          var delta = oe.wheelDelta || -oe.detail;
-
-          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
-          event.preventDefault();
-
-          toggleTOCOverflowIndicators();
-      });
-    }
-
-    function tocOverflowIndicator (indicator, action) {
-      var $indicator = $(indicator);
-      var opacity = action === 'show' ? 1 : 0;
-      $indicator.velocity ?
-        $indicator.velocity('stop').velocity({
-          opacity: opacity
-        }, { duration: 100 }) :
-        $indicator.stop().animate({
-          opacity: opacity
-        }, 100);
-    }
-
-  });
-</script>
-
-<script type="text/javascript" id="sidebar.nav">
-  $(document).ready(function () {
-    var html = $('html');
-    var TAB_ANIMATE_DURATION = 200;
-    var hasVelocity = $.isFunction(html.velocity);
-
-    $('.sidebar-nav li').on('click', function () {
-      var item = $(this);
-      var activeTabClassName = 'sidebar-nav-active';
-      var activePanelClassName = 'sidebar-panel-active';
-      if (item.hasClass(activeTabClassName)) {
-        return;
-      }
-
-      var currentTarget = $('.' + activePanelClassName);
-      var target = $('.' + item.data('target'));
-
-      hasVelocity ?
-        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
-          target
-            .velocity('stop')
-            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
-            .addClass(activePanelClassName);
-        }) :
-        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
-          currentTarget.hide();
-          target
-            .stop()
-            .css({'opacity': 0, 'display': 'block'})
-            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
-              currentTarget.removeClass(activePanelClassName);
-              target.addClass(activePanelClassName);
-            });
-        });
-
-      item.siblings().removeClass(activeTabClassName);
-      item.addClass(activeTabClassName);
-    });
-
-    $('.post-toc a').on('click', function (e) {
-      e.preventDefault();
-      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
-      var offset = $(targetSelector).offset().top;
-      hasVelocity ?
-        html.velocity('stop').velocity('scroll', {
-          offset: offset  + 'px',
-          mobileHA: false
-        }) :
-        $('html, body').stop().animate({
-          scrollTop: offset
-        }, 500);
-    });
-
-    // Expand sidebar on post detail page by default, when post has a toc.
-    NexT.motion.middleWares.sidebar = function () {
-      var $tocContent = $('.post-toc-content');
-
-      if (CONFIG.sidebar === 'post') {
-        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
-          NexT.utils.displaySidebar();
-        }
-      }
-    };
-  });
-</script>
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
 
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
 
 
 
@@ -826,14 +731,11 @@
 
   
   
+  
 
   
 
-<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"16"},"slide":{"type":"slide","bdImg":"3","bdPos":"left","bdTop":"250"}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
-
-
   
-
 
 </body>
 </html>

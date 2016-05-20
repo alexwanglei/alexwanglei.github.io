@@ -32,13 +32,36 @@
 
 
 
-  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
 
 
 
 <link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.0.0" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
   <meta name="keywords" content="Spark," />
@@ -52,7 +75,7 @@
 
 
 
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.0" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
 
 
 
@@ -76,7 +99,7 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     scheme: 'Pisces',
-    sidebar: '[object Object]',
+    sidebar: {"position":"left","display":"post"},
     fancybox: true,
     motion: true,
     duoshuo: {
@@ -104,6 +127,10 @@
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
+
+
+
+
 
 
 
@@ -142,7 +169,7 @@
   
 
   
-    <ul id="menu" class="menu menu-left">
+    <ul id="menu" class="menu">
       
         
         <li class="menu-item menu-item-home">
@@ -186,10 +213,10 @@
       
 
       
-      
-      
         <li class="menu-item menu-item-search">
-          <a href="#" class="st-search-show-outputs">
+          
+            <a href="#" class="st-search-show-outputs">
+          
             
               <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
             
@@ -305,6 +332,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -347,6 +376,18 @@
 <h3 id="runMain_u65B9_u6CD5"><a href="#runMain_u65B9_u6CD5" class="headerlink" title="runMain方法"></a>runMain方法</h3><p>利用反射调用childMainClass的main方法，即用户编写的应用程序的main方法。<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">……</span><br><span class="line">mainClass = <span class="type">Class</span>.forName(childMainClass, <span class="literal">true</span>, loader)</span><br><span class="line">……</span><br><span class="line"><span class="keyword">val</span> mainMethod = mainClass.getMethod(<span class="string">"main"</span>, <span class="keyword">new</span> <span class="type">Array</span>[<span class="type">String</span>](<span class="number">0</span>).getClass)</span><br><span class="line">……</span><br><span class="line">mainMethod.invoke(<span class="literal">null</span>, childArgs.toArray)</span><br></pre></td></tr></table></figure></p>
 <p>本例中mainClass为SparkPi，main方法中是计算π的具体代码：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">SparkPi</span> &#123;</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">main</span>(</span>args: <span class="type">Array</span>[<span class="type">String</span>]) &#123;</span><br><span class="line">    <span class="keyword">val</span> conf = <span class="keyword">new</span> <span class="type">SparkConf</span>().setAppName(<span class="string">"Spark Pi"</span>)</span><br><span class="line">    <span class="keyword">val</span> spark = <span class="keyword">new</span> <span class="type">SparkContext</span>(conf)</span><br><span class="line">    <span class="keyword">val</span> slices = <span class="keyword">if</span> (args.length &gt; <span class="number">0</span>) args(<span class="number">0</span>).toInt <span class="keyword">else</span> <span class="number">2</span></span><br><span class="line">    <span class="keyword">val</span> n = math.min(<span class="number">100000</span>L * slices, <span class="type">Int</span>.<span class="type">MaxValue</span>).toInt <span class="comment">// avoid overflow</span></span><br><span class="line">    <span class="keyword">val</span> count = spark.parallelize(<span class="number">1</span> until n, slices).map &#123; i =&gt;</span><br><span class="line">      <span class="keyword">val</span> x = random * <span class="number">2</span> - <span class="number">1</span></span><br><span class="line">      <span class="keyword">val</span> y = random * <span class="number">2</span> - <span class="number">1</span></span><br><span class="line">      <span class="keyword">if</span> (x*x + y*y &lt; <span class="number">1</span>) <span class="number">1</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">    &#125;.reduce(_ + _)</span><br><span class="line">    println(<span class="string">"Pi is roughly "</span> + <span class="number">4.0</span> * count / n)</span><br><span class="line">    spark.stop()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
       
     </div>
 
@@ -445,24 +486,28 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">9</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
 
-          <div class="site-state-item site-state-categories">
-            <a href="/categories">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">分类</span>
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
               </a>
-          </div>
+            </div>
+          
 
-          <div class="site-state-item site-state-tags">
-            <a href="/tags">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">标签</span>
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
               </a>
-          </div>
+            </div>
+          
 
         </nav>
 
@@ -479,18 +524,20 @@
           
             
               <span class="links-of-author-item">
-                <a href="https://github.com/alexwanglei" target="_blank">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
                   
-                    <i class="fa fa-github"></i> GitHub
+                    <i class="fa fa-github"></i>
                   
+                  GitHub
                 </a>
               </span>
             
               <span class="links-of-author-item">
-                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
                   
-                    <i class="fa fa-globe"></i> Zhihu
+                    <i class="fa fa-globe"></i>
                   
+                  Zhihu
                 </a>
               </span>
             
@@ -500,17 +547,13 @@
         
         
 
-        <div class="links-of-author motion-element">
-          
-        </div>
+        
+        
 
       </section>
 
       
         <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc-indicator-top post-toc-indicator">
-            <i class="fa fa-angle-double-up"></i>
-          </div>
           <div class="post-toc">
             
               
@@ -518,9 +561,6 @@
             
               <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#u4F7F_u7528spark-submit_u811A_u672C_u63D0_u4EA4_u5E94_u7528_u7A0B_u5E8F"><span class="nav-number">1.</span> <span class="nav-text">使用spark-submit脚本提交应用程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#u5E94_u7528_u63D0_u4EA4_u7C7B_u2014_u2014org-apache-spark-deploy-SparkSubmit"><span class="nav-number">2.</span> <span class="nav-text">应用提交类——org.apache.spark.deploy.SparkSubmit</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SparkSubmit_main_u65B9_u6CD5"><span class="nav-number">2.1.</span> <span class="nav-text">SparkSubmit main方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#submit_u65B9_u6CD5"><span class="nav-number">2.2.</span> <span class="nav-text">submit方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#runMain_u65B9_u6CD5"><span class="nav-number">2.3.</span> <span class="nav-text">runMain方法</span></a></li></ol></li></ol></div>
             
-          </div>
-          <div class="post-toc-indicator-bottom post-toc-indicator">
-            <i class="fa fa-angle-double-down"></i>
           </div>
         </section>
       
@@ -540,7 +580,7 @@
   &copy; 
   <span itemprop="copyrightYear">2016</span>
   <span class="with-love">
-    <i class="icon-next-heart fa fa-heart"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Alex Lei</span>
 </div>
@@ -556,220 +596,85 @@
   </a>
 </div>
 
+        
 
-
+        
       </div>
     </footer>
 
-    <div class="back-to-top"></div>
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
   </div>
 
   
 
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
 
   
 
 
 
+  
   <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
 
+  
   <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
 
+  
   <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.0.0"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.0.0"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
 
 
 
   
   
-<script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.0"></script>
 
-<script type="text/javascript" id="sidebar.toc.highlight">
-  $(document).ready(function () {
-    var tocSelector = '.post-toc';
-    var $tocSelector = $(tocSelector);
-    var activeCurrentSelector = '.active-current';
 
-    $tocSelector
-      .on('activate.bs.scrollspy', function () {
-        var $currentActiveElement = $(tocSelector + ' .active').last();
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
 
-        removeCurrentActiveClass();
-        $currentActiveElement.addClass('active-current');
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
 
-        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
-      })
-      .on('clear.bs.scrollspy', function () {
-        removeCurrentActiveClass();
-      });
 
-    function removeCurrentActiveClass () {
-      $(tocSelector + ' ' + activeCurrentSelector)
-        .removeClass(activeCurrentSelector.substring(1));
-    }
 
-    function processTOC () {
-      getTOCMaxHeight();
-      toggleTOCOverflowIndicators();
-    }
-
-    function getTOCMaxHeight () {
-      var height = $('.sidebar').height() -
-                   $tocSelector.position().top -
-                   $('.post-toc-indicator-bottom').height();
-
-      $tocSelector.css('height', height);
-
-      return height;
-    }
-
-    function toggleTOCOverflowIndicators () {
-      tocOverflowIndicator(
-        '.post-toc-indicator-top',
-        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
-      );
-
-      tocOverflowIndicator(
-        '.post-toc-indicator-bottom',
-        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
-      )
-    }
-
-    $(document).on('sidebar.motion.complete', function () {
-      processTOC();
-    });
-
-    $('body').scrollspy({ target: tocSelector });
-    $(window).on('resize', function () {
-      if ( $('.sidebar').hasClass('sidebar-active') ) {
-        processTOC();
-      }
-    });
-
-    onScroll($tocSelector);
-
-    function onScroll (element) {
-      element.on('mousewheel DOMMouseScroll', function (event) {
-          var oe = event.originalEvent;
-          var delta = oe.wheelDelta || -oe.detail;
-
-          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
-          event.preventDefault();
-
-          toggleTOCOverflowIndicators();
-      });
-    }
-
-    function tocOverflowIndicator (indicator, action) {
-      var $indicator = $(indicator);
-      var opacity = action === 'show' ? 1 : 0;
-      $indicator.velocity ?
-        $indicator.velocity('stop').velocity({
-          opacity: opacity
-        }, { duration: 100 }) :
-        $indicator.stop().animate({
-          opacity: opacity
-        }, 100);
-    }
-
-  });
-</script>
-
-<script type="text/javascript" id="sidebar.nav">
-  $(document).ready(function () {
-    var html = $('html');
-    var TAB_ANIMATE_DURATION = 200;
-    var hasVelocity = $.isFunction(html.velocity);
-
-    $('.sidebar-nav li').on('click', function () {
-      var item = $(this);
-      var activeTabClassName = 'sidebar-nav-active';
-      var activePanelClassName = 'sidebar-panel-active';
-      if (item.hasClass(activeTabClassName)) {
-        return;
-      }
-
-      var currentTarget = $('.' + activePanelClassName);
-      var target = $('.' + item.data('target'));
-
-      hasVelocity ?
-        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
-          target
-            .velocity('stop')
-            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
-            .addClass(activePanelClassName);
-        }) :
-        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
-          currentTarget.hide();
-          target
-            .stop()
-            .css({'opacity': 0, 'display': 'block'})
-            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
-              currentTarget.removeClass(activePanelClassName);
-              target.addClass(activePanelClassName);
-            });
-        });
-
-      item.siblings().removeClass(activeTabClassName);
-      item.addClass(activeTabClassName);
-    });
-
-    $('.post-toc a').on('click', function (e) {
-      e.preventDefault();
-      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
-      var offset = $(targetSelector).offset().top;
-      hasVelocity ?
-        html.velocity('stop').velocity('scroll', {
-          offset: offset  + 'px',
-          mobileHA: false
-        }) :
-        $('html, body').stop().animate({
-          scrollTop: offset
-        }, 500);
-    });
-
-    // Expand sidebar on post detail page by default, when post has a toc.
-    NexT.motion.middleWares.sidebar = function () {
-      var $tocContent = $('.post-toc-content');
-
-      if (CONFIG.sidebar === 'post') {
-        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
-          NexT.utils.displaySidebar();
-        }
-      }
-    };
-  });
-</script>
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
 
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
 
 
 
@@ -802,14 +707,11 @@
 
   
   
+  
 
   
 
-<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"16"},"slide":{"type":"slide","bdImg":"3","bdPos":"left","bdTop":"250"}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
-
-
   
-
 
 </body>
 </html>

@@ -32,13 +32,36 @@
 
 
 
-  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
 
 
 
 <link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.0.0" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
   <meta name="keywords" content="Spark," />
@@ -52,7 +75,7 @@
 
 
 
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.0" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
 
 
 
@@ -65,7 +88,7 @@
 <meta property="og:url" content="http://yoursite.com/2016/04/26/RDD-to-task/index.html">
 <meta property="og:site_name" content="Alexlei's Blog">
 <meta property="og:description" content="本章分析对RDD操作生成task的具体执行过程。">
-<meta property="og:updated_time" content="2016-04-27T08:41:30.085Z">
+<meta property="og:updated_time" content="2016-05-05T05:52:09.812Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="RDD task的生成过程">
 <meta name="twitter:description" content="本章分析对RDD操作生成task的具体执行过程。">
@@ -76,7 +99,7 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     scheme: 'Pisces',
-    sidebar: '[object Object]',
+    sidebar: {"position":"left","display":"post"},
     fancybox: true,
     motion: true,
     duoshuo: {
@@ -104,6 +127,10 @@
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
+
+
+
+
 
 
 
@@ -142,7 +169,7 @@
   
 
   
-    <ul id="menu" class="menu menu-left">
+    <ul id="menu" class="menu">
       
         
         <li class="menu-item menu-item-home">
@@ -186,10 +213,10 @@
       
 
       
-      
-      
         <li class="menu-item menu-item-search">
-          <a href="#" class="st-search-show-outputs">
+          
+            <a href="#" class="st-search-show-outputs">
+          
             
               <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
             
@@ -305,6 +332,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -325,8 +354,8 @@
 <p>调用doOnReceive方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">doOnReceive</span>(</span>event: <span class="type">DAGSchedulerEvent</span>): <span class="type">Unit</span> = event <span class="keyword">match</span> &#123;</span><br><span class="line">  <span class="keyword">case</span> <span class="type">JobSubmitted</span>(jobId, rdd, func, partitions, callSite, listener, properties) =&gt;</span><br><span class="line">    dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties)</span><br><span class="line">  ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>对于JobSubmitted事件，执行dagScheduler.handleJobSubmitted方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span>[scheduler] <span class="function"><span class="keyword">def</span> <span class="title">handleJobSubmitted</span>(</span>jobId: <span class="type">Int</span>,</span><br><span class="line">    finalRDD: <span class="type">RDD</span>[_],</span><br><span class="line">    func: (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[_]) =&gt; _,</span><br><span class="line">    partitions: <span class="type">Array</span>[<span class="type">Int</span>],</span><br><span class="line">    callSite: <span class="type">CallSite</span>,</span><br><span class="line">    listener: <span class="type">JobListener</span>,</span><br><span class="line">    properties: <span class="type">Properties</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> finalStage: <span class="type">ResultStage</span> = <span class="literal">null</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    finalStage = newResultStage(finalRDD, partitions.length, jobId, callSite)</span><br><span class="line">  &#125; </span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">if</span> (finalStage != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">val</span> job = <span class="keyword">new</span> <span class="type">ActiveJob</span>(jobId, finalStage, func, partitions, callSite, listener, properties)</span><br><span class="line">    clearCacheLocs()</span><br><span class="line">    ……</span><br><span class="line">    <span class="keyword">val</span> jobSubmissionTime = clock.getTimeMillis()</span><br><span class="line">    jobIdToActiveJob(jobId) = job</span><br><span class="line">    activeJobs += job</span><br><span class="line">    finalStage.resultOfJob = <span class="type">Some</span>(job)</span><br><span class="line">    <span class="keyword">val</span> stageIds = jobIdToStageIds(jobId).toArray</span><br><span class="line">    <span class="keyword">val</span> stageInfos = stageIds.flatMap(id =&gt; stageIdToStage.get(id).map(_.latestInfo))</span><br><span class="line">    listenerBus.post(</span><br><span class="line">      <span class="type">SparkListenerJobStart</span>(job.jobId, jobSubmissionTime, stageInfos, properties))</span><br><span class="line">    submitStage(finalStage)</span><br><span class="line">  &#125;</span><br><span class="line">  submitWaitingStages()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h2 id="stage__3D_26gt_3B_taskSet"><a href="#stage__3D_26gt_3B_taskSet" class="headerlink" title="stage =&gt; taskSet"></a>stage =&gt; taskSet</h2><p>在DagScheduler.handleJobSubmitted方法中调用newResultStage()方法获取最终的ResultStage，期间会通过getParentStagesAndId来生成父stage。最后调用submitStage(finalStage):<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submitStage</span>(</span>stage: <span class="type">Stage</span>) &#123;</span><br><span class="line">  <span class="keyword">val</span> jobId = activeJobForStage(stage)</span><br><span class="line">  <span class="keyword">if</span> (jobId.isDefined) &#123;</span><br><span class="line">    logDebug(<span class="string">"submitStage("</span> + stage + <span class="string">")"</span>)</span><br><span class="line">    <span class="keyword">if</span> (!waitingStages(stage) &amp;&amp; !runningStages(stage) &amp;&amp; !failedStages(stage)) &#123;</span><br><span class="line">      <span class="keyword">val</span> missing = getMissingParentStages(stage).sortBy(_.id)</span><br><span class="line">      logDebug(<span class="string">"missing: "</span> + missing)</span><br><span class="line">      <span class="keyword">if</span> (missing.isEmpty) &#123;</span><br><span class="line">        logInfo(<span class="string">"Submitting "</span> + stage + <span class="string">" ("</span> + stage.rdd + <span class="string">"), which has no missing parents"</span>)</span><br><span class="line">        submitMissingTasks(stage, jobId.get)</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (parent &lt;- missing) &#123;</span><br><span class="line">          submitStage(parent)</span><br><span class="line">        &#125;</span><br><span class="line">        waitingStages += stage</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    abortStage(stage, <span class="string">"No active job for stage "</span> + stage.id, <span class="type">None</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>submitStage方法会递归的提交stage的父stage，直到没有missParentStages(缺少的父stages)，然后调用submitMissingTasks():<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submitMissingTasks</span>(</span>stage: <span class="type">Stage</span>, jobId: <span class="type">Int</span>) &#123;  …… <span class="keyword">var</span> taskBinary: <span class="type">Broadcast</span>[<span class="type">Array</span>[<span class="type">Byte</span>]] = <span class="literal">null</span></span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">var</span> taskBinary: <span class="type">Broadcast</span>[<span class="type">Array</span>[<span class="type">Byte</span>]] = <span class="literal">null</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// For ShuffleMapTask, serialize and broadcast (rdd, shuffleDep).</span></span><br><span class="line">    <span class="comment">// For ResultTask, serialize and broadcast (rdd, func).</span></span><br><span class="line">    <span class="keyword">val</span> taskBinaryBytes: <span class="type">Array</span>[<span class="type">Byte</span>] = stage <span class="keyword">match</span> &#123;</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</span><br><span class="line">        closureSerializer.serialize((stage.rdd, stage.shuffleDep): <span class="type">AnyRef</span>).array()</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</span><br><span class="line">        closureSerializer.serialize((stage.rdd, stage.resultOfJob.get.func): <span class="type">AnyRef</span>).array()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    taskBinary = sc.broadcast(taskBinaryBytes)</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">val</span> tasks: <span class="type">Seq</span>[<span class="type">Task</span>[_]] = <span class="keyword">try</span> &#123;</span><br><span class="line">    stage <span class="keyword">match</span> &#123;</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</span><br><span class="line">        partitionsToCompute.map &#123; id =&gt;</span><br><span class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</span><br><span class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(id)</span><br><span class="line">          <span class="keyword">new</span> <span class="type">ShuffleMapTask</span>(stage.id, stage.latestInfo.attemptId,</span><br><span class="line">            taskBinary, part, locs, stage.internalAccumulators)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</span><br><span class="line">        <span class="keyword">val</span> job = stage.resultOfJob.get</span><br><span class="line">        partitionsToCompute.map &#123; id =&gt;</span><br><span class="line">          <span class="keyword">val</span> p: <span class="type">Int</span> = job.partitions(id)</span><br><span class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(p)</span><br><span class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</span><br><span class="line">          <span class="keyword">new</span> <span class="type">ResultTask</span>(stage.id, stage.latestInfo.attemptId,</span><br><span class="line">            taskBinary, part, locs, id, stage.internalAccumulators)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">if</span> (tasks.size &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    logInfo(<span class="string">"Submitting "</span> + tasks.size + <span class="string">" missing tasks from "</span> + stage + <span class="string">" ("</span> + stage.rdd + <span class="string">")"</span>)</span><br><span class="line">    stage.pendingPartitions ++= tasks.map(_.partitionId)</span><br><span class="line">    logDebug(<span class="string">"New pending partitions: "</span> + stage.pendingPartitions)</span><br><span class="line">    taskScheduler.submitTasks(<span class="keyword">new</span> <span class="type">TaskSet</span>(</span><br><span class="line">      tasks.toArray, stage.id, stage.latestInfo.attemptId, stage.firstJobId, properties))</span><br><span class="line">    stage.latestInfo.submissionTime = <span class="type">Some</span>(clock.getTimeMillis())</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>subMissingTasks方法将stage转换成TaskSet，然后交给taskScheduler提交。Stage分为ShuffleMapStage和ResultStage，对于ShuffleMapStage，将Stage的rdd和shuffleDep序列化为taskBinary，对于ResultStage，将Stage的rdd和func序列化为taskBinary；对于ShuffleMapStage，为每个需要计算的分区创建一个ShuffleMapTask，最后得到一个ShuffleMapTask序列；对于ResultStage，为每个需要计算的分区创建一个ResultTask，最后得到一个ResultTask序列。根据Task序列和stage的信息创建TaskSet对象，最后执行taskScheduler.submitTasks(TaskSet)：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">submitTasks</span>(</span>taskSet: <span class="type">TaskSet</span>) &#123;</span><br><span class="line">  <span class="keyword">val</span> tasks = taskSet.tasks</span><br><span class="line">  logInfo(<span class="string">"Adding task set "</span> + taskSet.id + <span class="string">" with "</span> + tasks.length + <span class="string">" tasks"</span>)</span><br><span class="line">  <span class="keyword">this</span>.synchronized &#123;</span><br><span class="line">    <span class="keyword">val</span> manager = createTaskSetManager(taskSet, maxTaskFailures)</span><br><span class="line">    <span class="keyword">val</span> stage = taskSet.stageId</span><br><span class="line">    <span class="keyword">val</span> stageTaskSets =</span><br><span class="line">      taskSetsByStageIdAndAttempt.getOrElseUpdate(stage, <span class="keyword">new</span> <span class="type">HashMap</span>[<span class="type">Int</span>, <span class="type">TaskSetManager</span>])</span><br><span class="line">    stageTaskSets(taskSet.stageAttemptId) = manager</span><br><span class="line">    <span class="keyword">val</span> conflictingTaskSet = stageTaskSets.exists &#123; <span class="keyword">case</span> (_, ts) =&gt;</span><br><span class="line">      ts.taskSet != taskSet &amp;&amp; !ts.isZombie</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (conflictingTaskSet) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(s<span class="string">"more than one active taskSet for stage $stage:"</span> +</span><br><span class="line">        s<span class="string">" $&#123;stageTaskSets.toSeq.map&#123;_._2.taskSet.id&#125;.mkString("</span>,<span class="string">")&#125;"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!isLocal &amp;&amp; !hasReceivedTask) &#123;</span><br><span class="line">      starvationTimer.scheduleAtFixedRate(<span class="keyword">new</span> <span class="type">TimerTask</span>() &#123;</span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span>(</span>) &#123;</span><br><span class="line">          <span class="keyword">if</span> (!hasLaunchedTask) &#123;</span><br><span class="line">            logWarning(<span class="string">"Initial job has not accepted any resources; "</span> +</span><br><span class="line">              <span class="string">"check your cluster UI to ensure that workers are registered "</span> +</span><br><span class="line">              <span class="string">"and have sufficient resources"</span>)</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">this</span>.cancel()</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;, <span class="type">STARVATION_TIMEOUT_MS</span>, <span class="type">STARVATION_TIMEOUT_MS</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    hasReceivedTask = <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line">  backend.reviveOffers()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>submitStage方法会递归的提交stage的父stage，直到没有missParentStages(缺少的父stages)，然后调用submitMissingTasks():<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submitMissingTasks</span>(</span>stage: <span class="type">Stage</span>, jobId: <span class="type">Int</span>) &#123;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">var</span> taskBinary: <span class="type">Broadcast</span>[<span class="type">Array</span>[<span class="type">Byte</span>]] = <span class="literal">null</span></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// For ShuffleMapTask, serialize and broadcast (rdd, shuffleDep).</span></span><br><span class="line">    <span class="comment">// For ResultTask, serialize and broadcast (rdd, func).</span></span><br><span class="line">    <span class="keyword">val</span> taskBinaryBytes: <span class="type">Array</span>[<span class="type">Byte</span>] = stage <span class="keyword">match</span> &#123;</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</span><br><span class="line">        closureSerializer.serialize((stage.rdd, stage.shuffleDep): <span class="type">AnyRef</span>).array()</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</span><br><span class="line">        closureSerializer.serialize((stage.rdd, stage.resultOfJob.get.func): <span class="type">AnyRef</span>).array()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    taskBinary = sc.broadcast(taskBinaryBytes)</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">val</span> tasks: <span class="type">Seq</span>[<span class="type">Task</span>[_]] = <span class="keyword">try</span> &#123;</span><br><span class="line">    stage <span class="keyword">match</span> &#123;</span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</span><br><span class="line">        partitionsToCompute.map &#123; id =&gt;</span><br><span class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</span><br><span class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(id)</span><br><span class="line">          <span class="keyword">new</span> <span class="type">ShuffleMapTask</span>(stage.id, stage.latestInfo.attemptId,</span><br><span class="line">            taskBinary, part, locs, stage.internalAccumulators)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</span><br><span class="line">        <span class="keyword">val</span> job = stage.resultOfJob.get</span><br><span class="line">        partitionsToCompute.map &#123; id =&gt;</span><br><span class="line">          <span class="keyword">val</span> p: <span class="type">Int</span> = job.partitions(id)</span><br><span class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(p)</span><br><span class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</span><br><span class="line">          <span class="keyword">new</span> <span class="type">ResultTask</span>(stage.id, stage.latestInfo.attemptId,</span><br><span class="line">            taskBinary, part, locs, id, stage.internalAccumulators)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">if</span> (tasks.size &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    logInfo(<span class="string">"Submitting "</span> + tasks.size + <span class="string">" missing tasks from "</span> + stage + <span class="string">" ("</span> + stage.rdd + <span class="string">")"</span>)</span><br><span class="line">    stage.pendingPartitions ++= tasks.map(_.partitionId)</span><br><span class="line">    logDebug(<span class="string">"New pending partitions: "</span> + stage.pendingPartitions)</span><br><span class="line">    taskScheduler.submitTasks(<span class="keyword">new</span> <span class="type">TaskSet</span>(</span><br><span class="line">      tasks.toArray, stage.id, stage.latestInfo.attemptId, stage.firstJobId, properties))</span><br><span class="line">    stage.latestInfo.submissionTime = <span class="type">Some</span>(clock.getTimeMillis())</span><br><span class="line">  &#125;</span><br><span class="line">  ……</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>subMissingTasks方法将stage转换成TaskSet，然后交给taskScheduler提交。Stage分为ShuffleMapStage和ResultStage，对于ShuffleMapStage，将Stage的rdd和shuffleDep序列化为taskBinaryBytes；对于ResultStage，将Stage的rdd和func序列化为taskBinaryBytes。将taskBinaryBytes封装成广播变量taskBinary。对于ShuffleMapStage，为每个需要计算的分区创建一个ShuffleMapTask，最后得到一个ShuffleMapTask序列；对于ResultStage，为每个需要计算的分区创建一个ResultTask，最后得到一个ResultTask序列。根据Task序列和stage的信息创建TaskSet对象，最后执行taskScheduler.submitTasks(TaskSet)：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">submitTasks</span>(</span>taskSet: <span class="type">TaskSet</span>) &#123;</span><br><span class="line">  <span class="keyword">val</span> tasks = taskSet.tasks</span><br><span class="line">  logInfo(<span class="string">"Adding task set "</span> + taskSet.id + <span class="string">" with "</span> + tasks.length + <span class="string">" tasks"</span>)</span><br><span class="line">  <span class="keyword">this</span>.synchronized &#123;</span><br><span class="line">    <span class="keyword">val</span> manager = createTaskSetManager(taskSet, maxTaskFailures)</span><br><span class="line">    <span class="keyword">val</span> stage = taskSet.stageId</span><br><span class="line">    <span class="keyword">val</span> stageTaskSets =</span><br><span class="line">      taskSetsByStageIdAndAttempt.getOrElseUpdate(stage, <span class="keyword">new</span> <span class="type">HashMap</span>[<span class="type">Int</span>, <span class="type">TaskSetManager</span>])</span><br><span class="line">    stageTaskSets(taskSet.stageAttemptId) = manager</span><br><span class="line">    <span class="keyword">val</span> conflictingTaskSet = stageTaskSets.exists &#123; <span class="keyword">case</span> (_, ts) =&gt;</span><br><span class="line">      ts.taskSet != taskSet &amp;&amp; !ts.isZombie</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (conflictingTaskSet) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(s<span class="string">"more than one active taskSet for stage $stage:"</span> +</span><br><span class="line">        s<span class="string">" $&#123;stageTaskSets.toSeq.map&#123;_._2.taskSet.id&#125;.mkString("</span>,<span class="string">")&#125;"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!isLocal &amp;&amp; !hasReceivedTask) &#123;</span><br><span class="line">      starvationTimer.scheduleAtFixedRate(<span class="keyword">new</span> <span class="type">TimerTask</span>() &#123;</span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span>(</span>) &#123;</span><br><span class="line">          <span class="keyword">if</span> (!hasLaunchedTask) &#123;</span><br><span class="line">            logWarning(<span class="string">"Initial job has not accepted any resources; "</span> +</span><br><span class="line">              <span class="string">"check your cluster UI to ensure that workers are registered "</span> +</span><br><span class="line">              <span class="string">"and have sufficient resources"</span>)</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">this</span>.cancel()</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;, <span class="type">STARVATION_TIMEOUT_MS</span>, <span class="type">STARVATION_TIMEOUT_MS</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    hasReceivedTask = <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line">  backend.reviveOffers()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>TaskSchedulerImpl.submitTasks方法调用createTaskSetManager方法创建TaskSetManager对象，管理TaskSet中的tasks。然后执行schedulableBuilder.addTaskSetManager方法将TaskSetManager对象添加到调度池(pool)中。<strong>关于任务调度池后续单独分析</strong>。最后执行backend.reviveOffers()</p>
 <h2 id="TaskSet__3D_26gt_3B_Task"><a href="#TaskSet__3D_26gt_3B_Task" class="headerlink" title="TaskSet =&gt; Task"></a>TaskSet =&gt; Task</h2><p>backend是SparkDeploySchedulerBackend对象，父类CoarseGrainedSchedulerBackend.reviveOffers()方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">reviveOffers</span>(</span>) &#123;</span><br><span class="line">  driverEndpoint.send(<span class="type">ReviveOffers</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>reviveOffers方法向DriverEndpoint发送ReviveOffers消息。DriverEndpoint收到ReviveOffers消息处理：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">receive</span>:</span> <span class="type">PartialFunction</span>[<span class="type">Any</span>, <span class="type">Unit</span>] = &#123;</span><br><span class="line">  ……</span><br><span class="line">  <span class="keyword">case</span> <span class="type">ReviveOffers</span> =&gt;</span><br><span class="line">    makeOffers()</span><br><span class="line">  ……</span><br></pre></td></tr></table></figure></p>
@@ -341,6 +370,18 @@
 <p>TaskRunner.run方法将序列化的任务serializedTask反序列化，得到Task对象，然后调用Task.run方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span>(</span></span><br><span class="line">  taskAttemptId: <span class="type">Long</span>,</span><br><span class="line">  attemptNumber: <span class="type">Int</span>,</span><br><span class="line">  metricsSystem: <span class="type">MetricsSystem</span>)</span><br><span class="line">: (<span class="type">T</span>, <span class="type">AccumulatorUpdates</span>) = &#123;</span><br><span class="line">  context = <span class="keyword">new</span> <span class="type">TaskContextImpl</span>(</span><br><span class="line">    stageId,</span><br><span class="line">    partitionId,</span><br><span class="line">    taskAttemptId,</span><br><span class="line">    attemptNumber,</span><br><span class="line">    taskMemoryManager,</span><br><span class="line">    metricsSystem,</span><br><span class="line">    internalAccumulators,</span><br><span class="line">    runningLocally = <span class="literal">false</span>)</span><br><span class="line">  <span class="type">TaskContext</span>.setTaskContext(context)</span><br><span class="line">  context.taskMetrics.setHostname(<span class="type">Utils</span>.localHostName())</span><br><span class="line">  context.taskMetrics.setAccumulatorsUpdater(context.collectInternalAccumulators)</span><br><span class="line">  taskThread = <span class="type">Thread</span>.currentThread()</span><br><span class="line">  <span class="keyword">if</span> (_killed) &#123;</span><br><span class="line">    kill(interruptThread = <span class="literal">false</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    (runTask(context), context.collectAccumulators())</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    context.markTaskCompleted()</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="type">Utils</span>.tryLogNonFatalError &#123;</span><br><span class="line">        <span class="comment">// Release memory used by this thread for shuffles</span></span><br><span class="line">        <span class="type">SparkEnv</span>.get.shuffleMemoryManager.releaseMemoryForThisTask()</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="type">Utils</span>.tryLogNonFatalError &#123;</span><br><span class="line">        <span class="comment">// Release memory used by this thread for unrolling blocks</span></span><br><span class="line">        <span class="type">SparkEnv</span>.get.blockManager.memoryStore.releaseUnrollMemoryForThisTask()</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      <span class="type">TaskContext</span>.unset()</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>Task.run方法创建了TaskContextImpl对象，然后调用runTask方法。Task类是抽象类，runTask没有实现，Task有两个具体实现ShuffleMapTask和ResultTask，它们分别实现了自己的runTask方法。</p>
 
+      
+    </div>
+    
+    <div>
+      
+        
+      
+    </div>
+
+    <div>
+      
+        
       
     </div>
 
@@ -364,6 +405,10 @@
           </div>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/04/28/scheduler-pool/" rel="prev" title="Spark任务调度模式分析">
+                Spark任务调度模式分析 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -435,24 +480,28 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">9</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
 
-          <div class="site-state-item site-state-categories">
-            <a href="/categories">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">分类</span>
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
               </a>
-          </div>
+            </div>
+          
 
-          <div class="site-state-item site-state-tags">
-            <a href="/tags">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">标签</span>
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
               </a>
-          </div>
+            </div>
+          
 
         </nav>
 
@@ -469,18 +518,20 @@
           
             
               <span class="links-of-author-item">
-                <a href="https://github.com/alexwanglei" target="_blank">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
                   
-                    <i class="fa fa-github"></i> GitHub
+                    <i class="fa fa-github"></i>
                   
+                  GitHub
                 </a>
               </span>
             
               <span class="links-of-author-item">
-                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
                   
-                    <i class="fa fa-globe"></i> Zhihu
+                    <i class="fa fa-globe"></i>
                   
+                  Zhihu
                 </a>
               </span>
             
@@ -490,17 +541,13 @@
         
         
 
-        <div class="links-of-author motion-element">
-          
-        </div>
+        
+        
 
       </section>
 
       
         <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc-indicator-top post-toc-indicator">
-            <i class="fa fa-angle-double-up"></i>
-          </div>
           <div class="post-toc">
             
               
@@ -508,9 +555,6 @@
             
               <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#job__3D_26gt_3B_stage"><span class="nav-number">1.</span> <span class="nav-text">job => stage</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stage__3D_26gt_3B_taskSet"><span class="nav-number">2.</span> <span class="nav-text">stage => taskSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TaskSet__3D_26gt_3B_Task"><span class="nav-number">3.</span> <span class="nav-text">TaskSet => Task</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#executor_u542F_u52A8task"><span class="nav-number">4.</span> <span class="nav-text">executor启动task</span></a></li></ol></div>
             
-          </div>
-          <div class="post-toc-indicator-bottom post-toc-indicator">
-            <i class="fa fa-angle-double-down"></i>
           </div>
         </section>
       
@@ -530,7 +574,7 @@
   &copy; 
   <span itemprop="copyrightYear">2016</span>
   <span class="with-love">
-    <i class="icon-next-heart fa fa-heart"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Alex Lei</span>
 </div>
@@ -546,220 +590,85 @@
   </a>
 </div>
 
+        
 
-
+        
       </div>
     </footer>
 
-    <div class="back-to-top"></div>
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
   </div>
 
   
 
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
 
   
 
 
 
+  
   <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
 
+  
   <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
 
+  
   <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.0.0"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.0.0"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
 
 
 
   
   
-<script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.0"></script>
 
-<script type="text/javascript" id="sidebar.toc.highlight">
-  $(document).ready(function () {
-    var tocSelector = '.post-toc';
-    var $tocSelector = $(tocSelector);
-    var activeCurrentSelector = '.active-current';
 
-    $tocSelector
-      .on('activate.bs.scrollspy', function () {
-        var $currentActiveElement = $(tocSelector + ' .active').last();
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
 
-        removeCurrentActiveClass();
-        $currentActiveElement.addClass('active-current');
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
 
-        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
-      })
-      .on('clear.bs.scrollspy', function () {
-        removeCurrentActiveClass();
-      });
 
-    function removeCurrentActiveClass () {
-      $(tocSelector + ' ' + activeCurrentSelector)
-        .removeClass(activeCurrentSelector.substring(1));
-    }
 
-    function processTOC () {
-      getTOCMaxHeight();
-      toggleTOCOverflowIndicators();
-    }
-
-    function getTOCMaxHeight () {
-      var height = $('.sidebar').height() -
-                   $tocSelector.position().top -
-                   $('.post-toc-indicator-bottom').height();
-
-      $tocSelector.css('height', height);
-
-      return height;
-    }
-
-    function toggleTOCOverflowIndicators () {
-      tocOverflowIndicator(
-        '.post-toc-indicator-top',
-        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
-      );
-
-      tocOverflowIndicator(
-        '.post-toc-indicator-bottom',
-        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
-      )
-    }
-
-    $(document).on('sidebar.motion.complete', function () {
-      processTOC();
-    });
-
-    $('body').scrollspy({ target: tocSelector });
-    $(window).on('resize', function () {
-      if ( $('.sidebar').hasClass('sidebar-active') ) {
-        processTOC();
-      }
-    });
-
-    onScroll($tocSelector);
-
-    function onScroll (element) {
-      element.on('mousewheel DOMMouseScroll', function (event) {
-          var oe = event.originalEvent;
-          var delta = oe.wheelDelta || -oe.detail;
-
-          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
-          event.preventDefault();
-
-          toggleTOCOverflowIndicators();
-      });
-    }
-
-    function tocOverflowIndicator (indicator, action) {
-      var $indicator = $(indicator);
-      var opacity = action === 'show' ? 1 : 0;
-      $indicator.velocity ?
-        $indicator.velocity('stop').velocity({
-          opacity: opacity
-        }, { duration: 100 }) :
-        $indicator.stop().animate({
-          opacity: opacity
-        }, 100);
-    }
-
-  });
-</script>
-
-<script type="text/javascript" id="sidebar.nav">
-  $(document).ready(function () {
-    var html = $('html');
-    var TAB_ANIMATE_DURATION = 200;
-    var hasVelocity = $.isFunction(html.velocity);
-
-    $('.sidebar-nav li').on('click', function () {
-      var item = $(this);
-      var activeTabClassName = 'sidebar-nav-active';
-      var activePanelClassName = 'sidebar-panel-active';
-      if (item.hasClass(activeTabClassName)) {
-        return;
-      }
-
-      var currentTarget = $('.' + activePanelClassName);
-      var target = $('.' + item.data('target'));
-
-      hasVelocity ?
-        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
-          target
-            .velocity('stop')
-            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
-            .addClass(activePanelClassName);
-        }) :
-        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
-          currentTarget.hide();
-          target
-            .stop()
-            .css({'opacity': 0, 'display': 'block'})
-            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
-              currentTarget.removeClass(activePanelClassName);
-              target.addClass(activePanelClassName);
-            });
-        });
-
-      item.siblings().removeClass(activeTabClassName);
-      item.addClass(activeTabClassName);
-    });
-
-    $('.post-toc a').on('click', function (e) {
-      e.preventDefault();
-      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
-      var offset = $(targetSelector).offset().top;
-      hasVelocity ?
-        html.velocity('stop').velocity('scroll', {
-          offset: offset  + 'px',
-          mobileHA: false
-        }) :
-        $('html, body').stop().animate({
-          scrollTop: offset
-        }, 500);
-    });
-
-    // Expand sidebar on post detail page by default, when post has a toc.
-    NexT.motion.middleWares.sidebar = function () {
-      var $tocContent = $('.post-toc-content');
-
-      if (CONFIG.sidebar === 'post') {
-        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
-          NexT.utils.displaySidebar();
-        }
-      }
-    };
-  });
-</script>
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
 
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
 
 
 
@@ -792,14 +701,11 @@
 
   
   
+  
 
   
 
-<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"1","bdMiniList":false,"bdPic":"","bdStyle":"0","bdSize":"16"},"slide":{"type":"slide","bdImg":"3","bdPos":"left","bdTop":"250"}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
-
-
   
-
 
 </body>
 </html>

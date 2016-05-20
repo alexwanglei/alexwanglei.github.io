@@ -32,13 +32,36 @@
 
 
 
-  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
 
 
 
 <link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.0.0" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
   <meta name="keywords" content="Hexo, NexT" />
@@ -52,7 +75,7 @@
 
 
 
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.0" />
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
 
 
 
@@ -75,7 +98,7 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     scheme: 'Pisces',
-    sidebar: '[object Object]',
+    sidebar: {"position":"left","display":"post"},
     fancybox: true,
     motion: true,
     duoshuo: {
@@ -103,6 +126,10 @@
       s.parentNode.insertBefore(hm, s);
     })();
   </script>
+
+
+
+
 
 
 
@@ -143,7 +170,7 @@
   
 
   
-    <ul id="menu" class="menu menu-left">
+    <ul id="menu" class="menu">
       
         
         <li class="menu-item menu-item-home">
@@ -187,10 +214,10 @@
       
 
       
-      
-      
         <li class="menu-item menu-item-search">
-          <a href="#" class="st-search-show-outputs">
+          
+            <a href="#" class="st-search-show-outputs">
+          
             
               <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
             
@@ -232,11 +259,249 @@
           <div id="content" class="content">
             
   <section id="posts" class="posts-expand">
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
 
     
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2016/05/05/task-run/" itemprop="url">
+                  任务的运行过程
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-05-05T10:59:53+08:00" content="2016-05-05">
+              2016-05-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Spark/" itemprop="url" rel="index">
+                    <span itemprop="name">Spark</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/05/05/task-run/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/05/task-run/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>本章分析任务的具体运行过程，Spark中的任务分为ShuffleMapTask和ResultTask，ShuffleMapTask实现Stage中的RDD转换。<br>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2016/05/05/task-run/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
 
     
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
     
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2016/04/28/scheduler-pool/" itemprop="url">
+                  Spark任务调度模式分析
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-04-28T09:19:57+08:00" content="2016-04-28">
+              2016-04-28
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Spark/" itemprop="url" rel="index">
+                    <span itemprop="name">Spark</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/04/28/scheduler-pool/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/28/scheduler-pool/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>本章分析Spark两种任务调度模式的实现过程。<br>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2016/04/28/scheduler-pool/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
 
     
       
@@ -315,6 +580,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -334,6 +601,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -427,6 +702,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -446,6 +723,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -539,6 +824,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -558,6 +845,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -651,6 +946,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -670,6 +967,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -763,6 +1068,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -782,6 +1089,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -875,6 +1190,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -894,6 +1211,14 @@
             </a>
           </div>
         
+      
+    </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
       
     </div>
 
@@ -987,6 +1312,8 @@
 
           
           
+
+          
         </div>
       </header>
     
@@ -1008,6 +1335,14 @@
         
       
     </div>
+    
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
 
     <footer class="post-footer">
       
@@ -1023,7 +1358,6 @@
 
 
     
-
   </section>
 
   
@@ -1065,24 +1399,28 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">9</span>
               <span class="site-state-item-name">日志</span>
             </a>
           </div>
 
-          <div class="site-state-item site-state-categories">
-            <a href="/categories">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">分类</span>
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
               </a>
-          </div>
+            </div>
+          
 
-          <div class="site-state-item site-state-tags">
-            <a href="/tags">
-              <span class="site-state-item-count">2</span>
-              <span class="site-state-item-name">标签</span>
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
               </a>
-          </div>
+            </div>
+          
 
         </nav>
 
@@ -1099,18 +1437,20 @@
           
             
               <span class="links-of-author-item">
-                <a href="https://github.com/alexwanglei" target="_blank">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
                   
-                    <i class="fa fa-github"></i> GitHub
+                    <i class="fa fa-github"></i>
                   
+                  GitHub
                 </a>
               </span>
             
               <span class="links-of-author-item">
-                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
                   
-                    <i class="fa fa-globe"></i> Zhihu
+                    <i class="fa fa-globe"></i>
                   
+                  Zhihu
                 </a>
               </span>
             
@@ -1120,9 +1460,8 @@
         
         
 
-        <div class="links-of-author motion-element">
-          
-        </div>
+        
+        
 
       </section>
 
@@ -1143,7 +1482,7 @@
   &copy; 
   <span itemprop="copyrightYear">2016</span>
   <span class="with-love">
-    <i class="icon-next-heart fa fa-heart"></i>
+    <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Alex Lei</span>
 </div>
@@ -1159,59 +1498,81 @@
   </a>
 </div>
 
+        
 
-
+        
       </div>
     </footer>
 
-    <div class="back-to-top"></div>
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
   </div>
 
   
 
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
 
   
 
 
 
+  
   <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
 
+  
   <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
 
+  
   <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
 
-  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
   
 
 
-  <script type="text/javascript" src="/js/src/utils.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
 
-  <script type="text/javascript" src="/js/src/motion.js?v=5.0.0"></script>
-
-
-
-  
-  
-
-
-  <script type="text/javascript" src="/js/src/affix.js?v=5.0.0"></script>
-
-  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
 
 
 
   
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
 
   
 
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.0"></script>
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
 
 
 
@@ -1244,10 +1605,11 @@
 
   
   
-
-  
   
 
+  
+
+  
 
 </body>
 </html>
