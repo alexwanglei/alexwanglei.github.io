@@ -1,0 +1,711 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Spark," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Alexlei's Blog" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本章分析任务的具体运行过程，Spark中的任务分为ShuffleMapTask和ResultTask，ShuffleMapTask实现Stage中的RDD转换。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="任务的运行过程">
+<meta property="og:url" content="http://yoursite.com/2016/05/05/task-run/index.html">
+<meta property="og:site_name" content="Alexlei's Blog">
+<meta property="og:description" content="本章分析任务的具体运行过程，Spark中的任务分为ShuffleMapTask和ResultTask，ShuffleMapTask实现Stage中的RDD转换。">
+<meta property="og:updated_time" content="2016-05-05T09:02:06.412Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="任务的运行过程">
+<meta name="twitter:description" content="本章分析任务的具体运行过程，Spark中的任务分为ShuffleMapTask和ResultTask，ShuffleMapTask实现Stage中的RDD转换。">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <title> 任务的运行过程 | Alexlei's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?74a02f7e3de1e2999db4a3c93ccdb0b8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Alexlei's Blog</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Reading writing and thinking</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input" />
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'hsHFk2Aj62yyW4csiPxf','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                任务的运行过程
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-05-05T10:59:53+08:00" content="2016-05-05">
+              2016-05-05
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Spark/" itemprop="url" rel="index">
+                    <span itemprop="name">Spark</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/05/05/task-run/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/05/05/task-run/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本章分析任务的具体运行过程，Spark中的任务分为ShuffleMapTask和ResultTask，ShuffleMapTask实现Stage中的RDD转换。<br><a id="more"></a></p>
+<h2 id="ShuffleMapTask"><a href="#ShuffleMapTask" class="headerlink" title="ShuffleMapTask"></a>ShuffleMapTask</h2><p>ShuffleMapTask.runTask方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">runTask</span></span>(context: <span class="type">TaskContext</span>): <span class="type">MapStatus</span> = &#123;</div><div class="line">  <span class="comment">// Deserialize the RDD using the broadcast variable.</span></div><div class="line">  <span class="keyword">val</span> deserializeStartTime = <span class="type">System</span>.currentTimeMillis()</div><div class="line">  <span class="keyword">val</span> ser = <span class="type">SparkEnv</span>.get.closureSerializer.newInstance()</div><div class="line">  <span class="keyword">val</span> (rdd, dep) = ser.deserialize[(<span class="type">RDD</span>[_], <span class="type">ShuffleDependency</span>[_, _, _])](</div><div class="line">    <span class="type">ByteBuffer</span>.wrap(taskBinary.value), <span class="type">Thread</span>.currentThread.getContextClassLoader)</div><div class="line">  _executorDeserializeTime = <span class="type">System</span>.currentTimeMillis() - deserializeStartTime</div><div class="line"></div><div class="line">  metrics = <span class="type">Some</span>(context.taskMetrics)</div><div class="line">  <span class="keyword">var</span> writer: <span class="type">ShuffleWriter</span>[<span class="type">Any</span>, <span class="type">Any</span>] = <span class="literal">null</span></div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">    <span class="keyword">val</span> manager = <span class="type">SparkEnv</span>.get.shuffleManager</div><div class="line">    writer = manager.getWriter[<span class="type">Any</span>, <span class="type">Any</span>](dep.shuffleHandle, partitionId, context)</div><div class="line">    writer.write(rdd.iterator(partition, context).asInstanceOf[<span class="type">Iterator</span>[_ &lt;: <span class="type">Product2</span>[<span class="type">Any</span>, <span class="type">Any</span>]]])</div><div class="line">    writer.stop(success = <span class="literal">true</span>).get</div><div class="line">  &#125; <span class="keyword">catch</span> &#123;</div><div class="line">    <span class="keyword">case</span> e: <span class="type">Exception</span> =&gt;</div><div class="line">      <span class="keyword">try</span> &#123;</div><div class="line">        <span class="keyword">if</span> (writer != <span class="literal">null</span>) &#123;</div><div class="line">          writer.stop(success = <span class="literal">false</span>)</div><div class="line">        &#125;</div><div class="line">      &#125; <span class="keyword">catch</span> &#123;</div><div class="line">        <span class="keyword">case</span> e: <span class="type">Exception</span> =&gt;</div><div class="line">          log.debug(<span class="string">"Could not stop writer"</span>, e)</div><div class="line">      &#125;</div><div class="line">      <span class="keyword">throw</span> e</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>方法首先将广播变量taskBinary反序列化为rdd和dep（在DagSchuduler.submitMissingTasks方法中将ShuffleMapStage.rdd和ShuffleMapStage.shuffleDep序列化成taskBinaryBytes，taskBinary=sc.broadcast(taskBinaryBytes)）<br>得到shuffleManager，在SparkEnv中默认为SortShuffleManager；然后通过SortShuffleManager获取SortShuffleWriter；最后执行SortShffleWriter.write方法将批量记录写到任务的输出。执行rdd.iterator(partition,context)得到记录：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">final</span> <span class="function"><span class="keyword">def</span> <span class="title">iterator</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">T</span>] = &#123;</div><div class="line">  <span class="keyword">if</span> (storageLevel != <span class="type">StorageLevel</span>.<span class="type">NONE</span>) &#123;</div><div class="line">    <span class="type">SparkEnv</span>.get.cacheManager.getOrCompute(<span class="keyword">this</span>, split, context, storageLevel)</div><div class="line">  &#125; <span class="keyword">else</span> &#123;</div><div class="line">    computeOrReadCheckpoint(split, context)</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>RDD.iterator方法获取RDD数据集的迭代器，如果缓存中有直接从缓存中读取，否则需要计算。当未使用cache()和persist()时默认的storageLevel是StorageLevel.NONE，所以会执行computeOrReadCheckpoint(split, context)：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span>[spark] <span class="function"><span class="keyword">def</span> <span class="title">computeOrReadCheckpoint</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">T</span>] =</div><div class="line">&#123;</div><div class="line">  <span class="keyword">if</span> (isCheckpointed) firstParent[<span class="type">T</span>].iterator(split, context) <span class="keyword">else</span> compute(split, context)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>当没有检查点时执行compute，具体的RDD实现了自己的compute方法。<br>UnionRDD.compute：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(s: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">T</span>] = &#123;</div><div class="line">  <span class="keyword">val</span> part = s.asInstanceOf[<span class="type">UnionPartition</span>[<span class="type">T</span>]]</div><div class="line">  parent[<span class="type">T</span>](part.parentRddIndex).iterator(part.parentPartition, context)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>MapPartitionRDD.compute：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">compute</span></span>(split: <span class="type">Partition</span>, context: <span class="type">TaskContext</span>): <span class="type">Iterator</span>[<span class="type">U</span>] =</div><div class="line">  f(context, split.index, firstParent[<span class="type">T</span>].iterator(split, context))</div></pre></td></tr></table></figure></p>
+<p>在compute方法中，调用parent或firstParent方法得到依赖的父RDD，父RDD调用iterator方法得到父RDD的迭代器，在父迭代器上进行函数操作从而得到子RDD的迭代器。<br>parent方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">protected</span>[spark] <span class="function"><span class="keyword">def</span> <span class="title">parent</span></span>[<span class="type">U</span>: <span class="type">ClassTag</span>](j: <span class="type">Int</span>) = &#123;</div><div class="line">  dependencies(j).rdd.asInstanceOf[<span class="type">RDD</span>[<span class="type">U</span>]]</div><div class="line">&#125;</div><div class="line">返回第j个父<span class="type">RDD</span>，rdd.parent[<span class="type">T</span>](<span class="number">0</span>)等于rdd.firstParent[<span class="type">T</span>]。</div></pre></td></tr></table></figure></p>
+<p>firstParent方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">protected</span>[spark] <span class="function"><span class="keyword">def</span> <span class="title">firstParent</span></span>[<span class="type">U</span>: <span class="type">ClassTag</span>]: <span class="type">RDD</span>[<span class="type">U</span>] = &#123;</div><div class="line">  dependencies.head.rdd.asInstanceOf[<span class="type">RDD</span>[<span class="type">U</span>]]</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>返回第一个父RDD。<br>总结：RDD.iterator的计算过程是一个递归计算的过程，会不断的调用parent.iterator，直到找到可直接使用的RDD（缓存的或有检查点的）。</p>
+<h2 id="ResultTask"><a href="#ResultTask" class="headerlink" title="ResultTask"></a>ResultTask</h2><p>ResultTask.runTask方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">runTask</span></span>(context: <span class="type">TaskContext</span>): <span class="type">U</span> = &#123;</div><div class="line">  <span class="comment">// Deserialize the RDD and the func using the broadcast variables.</span></div><div class="line">  <span class="keyword">val</span> deserializeStartTime = <span class="type">System</span>.currentTimeMillis()</div><div class="line">  <span class="keyword">val</span> ser = <span class="type">SparkEnv</span>.get.closureSerializer.newInstance()</div><div class="line">  <span class="keyword">val</span> (rdd, func) = ser.deserialize[(<span class="type">RDD</span>[<span class="type">T</span>], (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[<span class="type">T</span>]) =&gt; <span class="type">U</span>)](</div><div class="line">    <span class="type">ByteBuffer</span>.wrap(taskBinary.value), <span class="type">Thread</span>.currentThread.getContextClassLoader)</div><div class="line">  _executorDeserializeTime = <span class="type">System</span>.currentTimeMillis() - deserializeStartTime</div><div class="line"></div><div class="line">  metrics = <span class="type">Some</span>(context.taskMetrics)</div><div class="line">  func(context, rdd.iterator(partition, context))</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>方法首先将taskBinary反序列化为rdd和func（在DagSchuduler.submitMissingTasks方法中将ResultStage.rdd和ResultStage.resultOfJob.get.func序列化成taskBinaryBytes，taskBinary=sc.broadcast(taskBinaryBytes)）。然后对rdd.iterator应用func函数，同样回到rdd.iterator的计算上。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag">#Spark</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/28/scheduler-pool/" rel="next" title="Spark任务调度模式分析">
+                <i class="fa fa-chevron-left"></i> Spark任务调度模式分析
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/20/submit-job-to-yarn/" rel="prev" title="Hadoop提交作业到Yarn">
+                Hadoop提交作业到Yarn <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/05/05/task-run/"
+           data-title="任务的运行过程" data-url="http://yoursite.com/2016/05/05/task-run/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Alex Lei" />
+          <p class="site-author-name" itemprop="name">Alex Lei</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">13</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  Zhihu
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ShuffleMapTask"><span class="nav-number">1.</span> <span class="nav-text">ShuffleMapTask</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ResultTask"><span class="nav-number">2.</span> <span class="nav-text">ResultTask</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Alex Lei</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"alexlei"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

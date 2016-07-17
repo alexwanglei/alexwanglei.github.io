@@ -1,0 +1,724 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Spark," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="Alexlei's Blog" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="本章分析对RDD操作生成task的具体执行过程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RDD task的生成过程">
+<meta property="og:url" content="http://yoursite.com/2016/04/26/RDD-to-task/index.html">
+<meta property="og:site_name" content="Alexlei's Blog">
+<meta property="og:description" content="本章分析对RDD操作生成task的具体执行过程。">
+<meta property="og:updated_time" content="2016-05-05T05:52:09.812Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RDD task的生成过程">
+<meta name="twitter:description" content="本章分析对RDD操作生成task的具体执行过程。">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <title> RDD task的生成过程 | Alexlei's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?74a02f7e3de1e2999db4a3c93ccdb0b8";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Alexlei's Blog</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle">Reading writing and thinking</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input" />
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'hsHFk2Aj62yyW4csiPxf','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                RDD task的生成过程
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2016-04-26T15:56:18+08:00" content="2016-04-26">
+              2016-04-26
+            </time>
+          </span>
+
+          
+            <span class="post-category" >
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
+                  <a href="/categories/Spark/" itemprop="url" rel="index">
+                    <span itemprop="name">Spark</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/04/26/RDD-to-task/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/04/26/RDD-to-task/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本章分析对RDD操作生成task的具体执行过程。<br><a id="more"></a></p>
+<h2 id="job-gt-stage"><a href="#job-gt-stage" class="headerlink" title="job =&gt; stage"></a>job =&gt; stage</h2><p>对RDD操作包括transform操作和action操作，对transform操作，由于是惰性求值，不会触发计算，直到最后action操作时，会触发运行Job，例如count操作：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">count</span></span>(): <span class="type">Long</span> = sc.runJob(<span class="keyword">this</span>, <span class="type">Utils</span>.getIteratorSize _).sum</div></pre></td></tr></table></figure></p>
+<p>SparkContext类中重载了runJob方法，最终都会调用下面的runJob函数，它是所有action操作的主入口：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">runJob</span></span>[<span class="type">T</span>, <span class="type">U</span>: <span class="type">ClassTag</span>](</div><div class="line">    rdd: <span class="type">RDD</span>[<span class="type">T</span>],</div><div class="line">    func: (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[<span class="type">T</span>]) =&gt; <span class="type">U</span>,</div><div class="line">    partitions: <span class="type">Seq</span>[<span class="type">Int</span>],</div><div class="line">    resultHandler: (<span class="type">Int</span>, <span class="type">U</span>) =&gt; <span class="type">Unit</span>): <span class="type">Unit</span> = &#123;</div><div class="line">  <span class="keyword">if</span> (stopped.get()) &#123;</div><div class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">"SparkContext has been shutdown"</span>)</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">val</span> callSite = getCallSite</div><div class="line">  <span class="keyword">val</span> cleanedFunc = clean(func)</div><div class="line">  logInfo(<span class="string">"Starting job: "</span> + callSite.shortForm)</div><div class="line">  <span class="keyword">if</span> (conf.getBoolean(<span class="string">"spark.logLineage"</span>, <span class="literal">false</span>)) &#123;</div><div class="line">    logInfo(<span class="string">"RDD's recursive dependencies:\n"</span> + rdd.toDebugString)</div><div class="line">  &#125;</div><div class="line">  dagScheduler.runJob(rdd, cleanedFunc, partitions, callSite, resultHandler, localProperties.get)</div><div class="line">  progressBar.foreach(_.finishAll())</div><div class="line">  rdd.doCheckpoint()</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>DagScheduler类是实现面向stage调度的高层调度层。它为每个job计算一个stages DAG，记录具体化的RDDs和stage输出，找出最优调度运行job。然后将stages作为TaskSets提交给底层TaskScheduler的具体实现，由TaskSchedulerImpl调度TaskSets运行到集群上。SparkContext.runJob调用dagScheduler.runJob方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">runJob</span></span>[<span class="type">T</span>, <span class="type">U</span>](</div><div class="line">    rdd: <span class="type">RDD</span>[<span class="type">T</span>],</div><div class="line">    func: (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[<span class="type">T</span>]) =&gt; <span class="type">U</span>,</div><div class="line">    partitions: <span class="type">Seq</span>[<span class="type">Int</span>],</div><div class="line">    callSite: <span class="type">CallSite</span>,</div><div class="line">    resultHandler: (<span class="type">Int</span>, <span class="type">U</span>) =&gt; <span class="type">Unit</span>,</div><div class="line">    properties: <span class="type">Properties</span>): <span class="type">Unit</span> = &#123;</div><div class="line">  <span class="keyword">val</span> start = <span class="type">System</span>.nanoTime</div><div class="line">  <span class="keyword">val</span> waiter = submitJob(rdd, func, partitions, callSite, resultHandler, properties)</div><div class="line">  waiter.awaitResult() <span class="keyword">match</span> &#123;</div><div class="line">    <span class="keyword">case</span> <span class="type">JobSucceeded</span> =&gt;</div><div class="line">      logInfo(<span class="string">"Job %d finished: %s, took %f s"</span>.format</div><div class="line">        (waiter.jobId, callSite.shortForm, (<span class="type">System</span>.nanoTime - start) / <span class="number">1e9</span>))</div><div class="line">    <span class="keyword">case</span> <span class="type">JobFailed</span>(exception: <span class="type">Exception</span>) =&gt;</div><div class="line">      logInfo(<span class="string">"Job %d failed: %s, took %f s"</span>.format</div><div class="line">        (waiter.jobId, callSite.shortForm, (<span class="type">System</span>.nanoTime - start) / <span class="number">1e9</span>))</div><div class="line">      <span class="comment">// SPARK-8644: Include user stack trace in exceptions coming from DAGScheduler.</span></div><div class="line">      <span class="keyword">val</span> callerStackTrace = <span class="type">Thread</span>.currentThread().getStackTrace.tail</div><div class="line">      exception.setStackTrace(exception.getStackTrace ++ callerStackTrace)</div><div class="line">      <span class="keyword">throw</span> exception</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>DagScheduler.runJob方法中调用DagScheduler.submitJob方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">submitJob</span></span>[<span class="type">T</span>, <span class="type">U</span>](</div><div class="line">    rdd: <span class="type">RDD</span>[<span class="type">T</span>],</div><div class="line">    func: (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[<span class="type">T</span>]) =&gt; <span class="type">U</span>,</div><div class="line">    partitions: <span class="type">Seq</span>[<span class="type">Int</span>],</div><div class="line">    callSite: <span class="type">CallSite</span>,</div><div class="line">    resultHandler: (<span class="type">Int</span>, <span class="type">U</span>) =&gt; <span class="type">Unit</span>,</div><div class="line">    properties: <span class="type">Properties</span>): <span class="type">JobWaiter</span>[<span class="type">U</span>] = &#123;</div><div class="line">  <span class="comment">// Check to make sure we are not launching a task on a partition that does not exist.</span></div><div class="line">  <span class="keyword">val</span> maxPartitions = rdd.partitions.length</div><div class="line">  partitions.find(p =&gt; p &gt;= maxPartitions || p &lt; <span class="number">0</span>).foreach &#123; p =&gt;</div><div class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalArgumentException</span>(</div><div class="line">      <span class="string">"Attempting to access a non-existent partition: "</span> + p + <span class="string">". "</span> +</div><div class="line">        <span class="string">"Total number of partitions: "</span> + maxPartitions)</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  <span class="keyword">val</span> jobId = nextJobId.getAndIncrement()</div><div class="line">  <span class="keyword">if</span> (partitions.size == <span class="number">0</span>) &#123;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">JobWaiter</span>[<span class="type">U</span>](<span class="keyword">this</span>, jobId, <span class="number">0</span>, resultHandler)</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  assert(partitions.size &gt; <span class="number">0</span>)</div><div class="line">  <span class="keyword">val</span> func2 = func.asInstanceOf[(<span class="type">TaskContext</span>, <span class="type">Iterator</span>[_]) =&gt; _]</div><div class="line">  <span class="keyword">val</span> waiter = <span class="keyword">new</span> <span class="type">JobWaiter</span>(<span class="keyword">this</span>, jobId, partitions.size, resultHandler)</div><div class="line">  eventProcessLoop.post(<span class="type">JobSubmitted</span>(</div><div class="line">    jobId, rdd, func2, partitions.toArray, callSite, waiter,</div><div class="line">    <span class="type">SerializationUtils</span>.clone(properties)))</div><div class="line">waiter</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>submitJob方法通过eventProcessLoop.post(JobSubmitted)往事件队列里增加一个JobSubmitted事件。eventProcessLoop是DAGSchedulerEventProcessLoop类实例，该类又继承EventLoop抽象类，该类中有一个守护线程，从eventQueue中取event然后调用onRecevie(event)。DAGSchedulerEventProcessLoop类中onReceive方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">onReceive</span></span>(event: <span class="type">DAGSchedulerEvent</span>): <span class="type">Unit</span> = &#123;</div><div class="line">  <span class="keyword">val</span> timerContext = timer.time()</div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">    doOnReceive(event)</div><div class="line">  &#125; <span class="keyword">finally</span> &#123;</div><div class="line">    timerContext.stop()</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>调用doOnReceive方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">doOnReceive</span></span>(event: <span class="type">DAGSchedulerEvent</span>): <span class="type">Unit</span> = event <span class="keyword">match</span> &#123;</div><div class="line">  <span class="keyword">case</span> <span class="type">JobSubmitted</span>(jobId, rdd, func, partitions, callSite, listener, properties) =&gt;</div><div class="line">    dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties)</div><div class="line">  ……</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>对于JobSubmitted事件，执行dagScheduler.handleJobSubmitted方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span>[scheduler] <span class="function"><span class="keyword">def</span> <span class="title">handleJobSubmitted</span></span>(jobId: <span class="type">Int</span>,</div><div class="line">    finalRDD: <span class="type">RDD</span>[_],</div><div class="line">    func: (<span class="type">TaskContext</span>, <span class="type">Iterator</span>[_]) =&gt; _,</div><div class="line">    partitions: <span class="type">Array</span>[<span class="type">Int</span>],</div><div class="line">    callSite: <span class="type">CallSite</span>,</div><div class="line">    listener: <span class="type">JobListener</span>,</div><div class="line">    properties: <span class="type">Properties</span>) &#123;</div><div class="line">  <span class="keyword">var</span> finalStage: <span class="type">ResultStage</span> = <span class="literal">null</span></div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">    finalStage = newResultStage(finalRDD, partitions.length, jobId, callSite)</div><div class="line">  &#125; </div><div class="line">  ……</div><div class="line">  <span class="keyword">if</span> (finalStage != <span class="literal">null</span>) &#123;</div><div class="line">    <span class="keyword">val</span> job = <span class="keyword">new</span> <span class="type">ActiveJob</span>(jobId, finalStage, func, partitions, callSite, listener, properties)</div><div class="line">    clearCacheLocs()</div><div class="line">    ……</div><div class="line">    <span class="keyword">val</span> jobSubmissionTime = clock.getTimeMillis()</div><div class="line">    jobIdToActiveJob(jobId) = job</div><div class="line">    activeJobs += job</div><div class="line">    finalStage.resultOfJob = <span class="type">Some</span>(job)</div><div class="line">    <span class="keyword">val</span> stageIds = jobIdToStageIds(jobId).toArray</div><div class="line">    <span class="keyword">val</span> stageInfos = stageIds.flatMap(id =&gt; stageIdToStage.get(id).map(_.latestInfo))</div><div class="line">    listenerBus.post(</div><div class="line">      <span class="type">SparkListenerJobStart</span>(job.jobId, jobSubmissionTime, stageInfos, properties))</div><div class="line">    submitStage(finalStage)</div><div class="line">  &#125;</div><div class="line">  submitWaitingStages()</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<h2 id="stage-gt-taskSet"><a href="#stage-gt-taskSet" class="headerlink" title="stage =&gt; taskSet"></a>stage =&gt; taskSet</h2><p>在DagScheduler.handleJobSubmitted方法中调用newResultStage()方法获取最终的ResultStage，期间会通过getParentStagesAndId来生成父stage。最后调用submitStage(finalStage):<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submitStage</span></span>(stage: <span class="type">Stage</span>) &#123;</div><div class="line">  <span class="keyword">val</span> jobId = activeJobForStage(stage)</div><div class="line">  <span class="keyword">if</span> (jobId.isDefined) &#123;</div><div class="line">    logDebug(<span class="string">"submitStage("</span> + stage + <span class="string">")"</span>)</div><div class="line">    <span class="keyword">if</span> (!waitingStages(stage) &amp;&amp; !runningStages(stage) &amp;&amp; !failedStages(stage)) &#123;</div><div class="line">      <span class="keyword">val</span> missing = getMissingParentStages(stage).sortBy(_.id)</div><div class="line">      logDebug(<span class="string">"missing: "</span> + missing)</div><div class="line">      <span class="keyword">if</span> (missing.isEmpty) &#123;</div><div class="line">        logInfo(<span class="string">"Submitting "</span> + stage + <span class="string">" ("</span> + stage.rdd + <span class="string">"), which has no missing parents"</span>)</div><div class="line">        submitMissingTasks(stage, jobId.get)</div><div class="line">      &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">for</span> (parent &lt;- missing) &#123;</div><div class="line">          submitStage(parent)</div><div class="line">        &#125;</div><div class="line">        waitingStages += stage</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125; <span class="keyword">else</span> &#123;</div><div class="line">    abortStage(stage, <span class="string">"No active job for stage "</span> + stage.id, <span class="type">None</span>)</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>submitStage方法会递归的提交stage的父stage，直到没有missParentStages(缺少的父stages)，然后调用submitMissingTasks():<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">submitMissingTasks</span></span>(stage: <span class="type">Stage</span>, jobId: <span class="type">Int</span>) &#123;</div><div class="line">  ……</div><div class="line">  <span class="keyword">var</span> taskBinary: <span class="type">Broadcast</span>[<span class="type">Array</span>[<span class="type">Byte</span>]] = <span class="literal">null</span></div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">    <span class="comment">// For ShuffleMapTask, serialize and broadcast (rdd, shuffleDep).</span></div><div class="line">    <span class="comment">// For ResultTask, serialize and broadcast (rdd, func).</span></div><div class="line">    <span class="keyword">val</span> taskBinaryBytes: <span class="type">Array</span>[<span class="type">Byte</span>] = stage <span class="keyword">match</span> &#123;</div><div class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</div><div class="line">        closureSerializer.serialize((stage.rdd, stage.shuffleDep): <span class="type">AnyRef</span>).array()</div><div class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</div><div class="line">        closureSerializer.serialize((stage.rdd, stage.resultOfJob.get.func): <span class="type">AnyRef</span>).array()</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    taskBinary = sc.broadcast(taskBinaryBytes)</div><div class="line">  &#125;</div><div class="line">  ……</div><div class="line">  <span class="keyword">val</span> tasks: <span class="type">Seq</span>[<span class="type">Task</span>[_]] = <span class="keyword">try</span> &#123;</div><div class="line">    stage <span class="keyword">match</span> &#123;</div><div class="line">      <span class="keyword">case</span> stage: <span class="type">ShuffleMapStage</span> =&gt;</div><div class="line">        partitionsToCompute.map &#123; id =&gt;</div><div class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</div><div class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(id)</div><div class="line">          <span class="keyword">new</span> <span class="type">ShuffleMapTask</span>(stage.id, stage.latestInfo.attemptId,</div><div class="line">            taskBinary, part, locs, stage.internalAccumulators)</div><div class="line">        &#125;</div><div class="line"></div><div class="line">      <span class="keyword">case</span> stage: <span class="type">ResultStage</span> =&gt;</div><div class="line">        <span class="keyword">val</span> job = stage.resultOfJob.get</div><div class="line">        partitionsToCompute.map &#123; id =&gt;</div><div class="line">          <span class="keyword">val</span> p: <span class="type">Int</span> = job.partitions(id)</div><div class="line">          <span class="keyword">val</span> part = stage.rdd.partitions(p)</div><div class="line">          <span class="keyword">val</span> locs = taskIdToLocations(id)</div><div class="line">          <span class="keyword">new</span> <span class="type">ResultTask</span>(stage.id, stage.latestInfo.attemptId,</div><div class="line">            taskBinary, part, locs, id, stage.internalAccumulators)</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  ……</div><div class="line">  <span class="keyword">if</span> (tasks.size &gt; <span class="number">0</span>) &#123;</div><div class="line">    logInfo(<span class="string">"Submitting "</span> + tasks.size + <span class="string">" missing tasks from "</span> + stage + <span class="string">" ("</span> + stage.rdd + <span class="string">")"</span>)</div><div class="line">    stage.pendingPartitions ++= tasks.map(_.partitionId)</div><div class="line">    logDebug(<span class="string">"New pending partitions: "</span> + stage.pendingPartitions)</div><div class="line">    taskScheduler.submitTasks(<span class="keyword">new</span> <span class="type">TaskSet</span>(</div><div class="line">      tasks.toArray, stage.id, stage.latestInfo.attemptId, stage.firstJobId, properties))</div><div class="line">    stage.latestInfo.submissionTime = <span class="type">Some</span>(clock.getTimeMillis())</div><div class="line">  &#125;</div><div class="line">  ……</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>subMissingTasks方法将stage转换成TaskSet，然后交给taskScheduler提交。Stage分为ShuffleMapStage和ResultStage，对于ShuffleMapStage，将Stage的rdd和shuffleDep序列化为taskBinaryBytes；对于ResultStage，将Stage的rdd和func序列化为taskBinaryBytes。将taskBinaryBytes封装成广播变量taskBinary。对于ShuffleMapStage，为每个需要计算的分区创建一个ShuffleMapTask，最后得到一个ShuffleMapTask序列；对于ResultStage，为每个需要计算的分区创建一个ResultTask，最后得到一个ResultTask序列。根据Task序列和stage的信息创建TaskSet对象，最后执行taskScheduler.submitTasks(TaskSet)：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">submitTasks</span></span>(taskSet: <span class="type">TaskSet</span>) &#123;</div><div class="line">  <span class="keyword">val</span> tasks = taskSet.tasks</div><div class="line">  logInfo(<span class="string">"Adding task set "</span> + taskSet.id + <span class="string">" with "</span> + tasks.length + <span class="string">" tasks"</span>)</div><div class="line">  <span class="keyword">this</span>.synchronized &#123;</div><div class="line">    <span class="keyword">val</span> manager = createTaskSetManager(taskSet, maxTaskFailures)</div><div class="line">    <span class="keyword">val</span> stage = taskSet.stageId</div><div class="line">    <span class="keyword">val</span> stageTaskSets =</div><div class="line">      taskSetsByStageIdAndAttempt.getOrElseUpdate(stage, <span class="keyword">new</span> <span class="type">HashMap</span>[<span class="type">Int</span>, <span class="type">TaskSetManager</span>])</div><div class="line">    stageTaskSets(taskSet.stageAttemptId) = manager</div><div class="line">    <span class="keyword">val</span> conflictingTaskSet = stageTaskSets.exists &#123; <span class="keyword">case</span> (_, ts) =&gt;</div><div class="line">      ts.taskSet != taskSet &amp;&amp; !ts.isZombie</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">if</span> (conflictingTaskSet) &#123;</div><div class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="type">IllegalStateException</span>(<span class="string">s"more than one active taskSet for stage <span class="subst">$stage</span>:"</span> +</div><div class="line">        <span class="string">s" <span class="subst">$&#123;stageTaskSets.toSeq.map&#123;_._2.taskSet.id&#125;</span>.mkString("</span>,<span class="string">")&#125;"</span>)</div><div class="line">    &#125;</div><div class="line">    schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties)</div><div class="line"></div><div class="line">    <span class="keyword">if</span> (!isLocal &amp;&amp; !hasReceivedTask) &#123;</div><div class="line">      starvationTimer.scheduleAtFixedRate(<span class="keyword">new</span> <span class="type">TimerTask</span>() &#123;</div><div class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span></span>() &#123;</div><div class="line">          <span class="keyword">if</span> (!hasLaunchedTask) &#123;</div><div class="line">            logWarning(<span class="string">"Initial job has not accepted any resources; "</span> +</div><div class="line">              <span class="string">"check your cluster UI to ensure that workers are registered "</span> +</div><div class="line">              <span class="string">"and have sufficient resources"</span>)</div><div class="line">          &#125; <span class="keyword">else</span> &#123;</div><div class="line">            <span class="keyword">this</span>.cancel()</div><div class="line">          &#125;</div><div class="line">        &#125;</div><div class="line">      &#125;, <span class="type">STARVATION_TIMEOUT_MS</span>, <span class="type">STARVATION_TIMEOUT_MS</span>)</div><div class="line">    &#125;</div><div class="line">    hasReceivedTask = <span class="literal">true</span></div><div class="line">  &#125;</div><div class="line">  backend.reviveOffers()</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>TaskSchedulerImpl.submitTasks方法调用createTaskSetManager方法创建TaskSetManager对象，管理TaskSet中的tasks。然后执行schedulableBuilder.addTaskSetManager方法将TaskSetManager对象添加到调度池(pool)中。<strong>关于任务调度池后续单独分析</strong>。最后执行backend.reviveOffers()</p>
+<h2 id="TaskSet-gt-Task"><a href="#TaskSet-gt-Task" class="headerlink" title="TaskSet =&gt; Task"></a>TaskSet =&gt; Task</h2><p>backend是SparkDeploySchedulerBackend对象，父类CoarseGrainedSchedulerBackend.reviveOffers()方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">reviveOffers</span></span>() &#123;</div><div class="line">  driverEndpoint.send(<span class="type">ReviveOffers</span>)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>reviveOffers方法向DriverEndpoint发送ReviveOffers消息。DriverEndpoint收到ReviveOffers消息处理：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">receive</span></span>: <span class="type">PartialFunction</span>[<span class="type">Any</span>, <span class="type">Unit</span>] = &#123;</div><div class="line">  ……</div><div class="line">  <span class="keyword">case</span> <span class="type">ReviveOffers</span> =&gt;</div><div class="line">    makeOffers()</div><div class="line">  ……</div></pre></td></tr></table></figure></p>
+<p>调用makeOffers()方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">makeOffers</span></span>() &#123;</div><div class="line">  <span class="comment">// Filter out executors under killing</span></div><div class="line">  <span class="keyword">val</span> activeExecutors = executorDataMap.filterKeys(!executorsPendingToRemove.contains(_))</div><div class="line">  <span class="keyword">val</span> workOffers = activeExecutors.map &#123; <span class="keyword">case</span> (id, executorData) =&gt;</div><div class="line">    <span class="keyword">new</span> <span class="type">WorkerOffer</span>(id, executorData.executorHost, executorData.freeCores)</div><div class="line">  &#125;.toSeq</div><div class="line">  launchTasks(scheduler.resourceOffers(workOffers))</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>makeOffers方法获取可用的Executor资源，以WorkerOffer对象表示。然后执行scheduler.resourceOffers(workOffers)获取任务描述：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">resourceOffers</span></span>(offers: <span class="type">Seq</span>[<span class="type">WorkerOffer</span>]): <span class="type">Seq</span>[<span class="type">Seq</span>[<span class="type">TaskDescription</span>]] = synchronized &#123;</div><div class="line">  ……</div><div class="line">  <span class="comment">// Randomly shuffle offers to avoid always placing tasks on the same set of workers.</span></div><div class="line">  <span class="keyword">val</span> shuffledOffers = <span class="type">Random</span>.shuffle(offers)</div><div class="line">  <span class="comment">// Build a list of tasks to assign to each worker.</span></div><div class="line">  <span class="keyword">val</span> tasks = shuffledOffers.map(o =&gt; <span class="keyword">new</span> <span class="type">ArrayBuffer</span>[<span class="type">TaskDescription</span>](o.cores))</div><div class="line">  <span class="keyword">val</span> availableCpus = shuffledOffers.map(o =&gt; o.cores).toArray</div><div class="line">  <span class="keyword">val</span> sortedTaskSets = rootPool.getSortedTaskSetQueue</div><div class="line">  <span class="keyword">for</span> (taskSet &lt;- sortedTaskSets) &#123;</div><div class="line">    logDebug(<span class="string">"parentName: %s, name: %s, runningTasks: %s"</span>.format(</div><div class="line">      taskSet.parent.name, taskSet.name, taskSet.runningTasks))</div><div class="line">    <span class="keyword">if</span> (newExecAvail) &#123;</div><div class="line">      taskSet.executorAdded()</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  <span class="comment">// Take each TaskSet in our scheduling order, and then offer it each node in increasing order</span></div><div class="line">  <span class="comment">// of locality levels so that it gets a chance to launch local tasks on all of them.</span></div><div class="line">  <span class="comment">// <span class="doctag">NOTE:</span> the preferredLocality order: PROCESS_LOCAL, NODE_LOCAL, NO_PREF, RACK_LOCAL, ANY</span></div><div class="line">  <span class="keyword">var</span> launchedTask = <span class="literal">false</span></div><div class="line">  <span class="keyword">for</span> (taskSet &lt;- sortedTaskSets; maxLocality &lt;- taskSet.myLocalityLevels) &#123;</div><div class="line">    do &#123;</div><div class="line">      launchedTask = resourceOfferSingleTaskSet(</div><div class="line">          taskSet, maxLocality, shuffledOffers, availableCpus, tasks)</div><div class="line">    &#125; <span class="keyword">while</span> (launchedTask)</div><div class="line">  &#125;</div><div class="line"></div><div class="line">  <span class="keyword">if</span> (tasks.size &gt; <span class="number">0</span>) &#123;</div><div class="line">    hasLaunchedTask = <span class="literal">true</span></div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> tasks</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>TaskSchedulerImpl.makeOffers方法随机打乱Executor资源offers，然后为每个offer创建一个TaskDescription数组，数组长度为offer的核数。通过rootPool.getSortedTaskSetQueue返回按调度策略排序的TaskSets。对每个TaskSet，根据taskSet.myLocalityLevels，执行resourceOfferSingleTaskSet方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">resourceOfferSingleTaskSet</span></span>(</div><div class="line">    taskSet: <span class="type">TaskSetManager</span>,</div><div class="line">    maxLocality: <span class="type">TaskLocality</span>,</div><div class="line">    shuffledOffers: <span class="type">Seq</span>[<span class="type">WorkerOffer</span>],</div><div class="line">    availableCpus: <span class="type">Array</span>[<span class="type">Int</span>],</div><div class="line">    tasks: <span class="type">Seq</span>[<span class="type">ArrayBuffer</span>[<span class="type">TaskDescription</span>]]) : <span class="type">Boolean</span> = &#123;</div><div class="line">  <span class="keyword">var</span> launchedTask = <span class="literal">false</span></div><div class="line">  <span class="keyword">for</span> (i &lt;- <span class="number">0</span> until shuffledOffers.size) &#123;</div><div class="line">    <span class="keyword">val</span> execId = shuffledOffers(i).executorId</div><div class="line">    <span class="keyword">val</span> host = shuffledOffers(i).host</div><div class="line">    <span class="keyword">if</span> (availableCpus(i) &gt;= <span class="type">CPUS_PER_TASK</span>) &#123;</div><div class="line">      <span class="keyword">try</span> &#123;</div><div class="line">        <span class="keyword">for</span> (task &lt;- taskSet.resourceOffer(execId, host, maxLocality)) &#123;</div><div class="line">          tasks(i) += task</div><div class="line">          <span class="keyword">val</span> tid = task.taskId</div><div class="line">          taskIdToTaskSetManager(tid) = taskSet</div><div class="line">          taskIdToExecutorId(tid) = execId</div><div class="line">          executorsByHost(host) += execId</div><div class="line">          availableCpus(i) -= <span class="type">CPUS_PER_TASK</span></div><div class="line">          assert(availableCpus(i) &gt;= <span class="number">0</span>)</div><div class="line">          launchedTask = <span class="literal">true</span></div><div class="line">        &#125;</div><div class="line">      &#125; <span class="keyword">catch</span> &#123;</div><div class="line">        <span class="keyword">case</span> e: <span class="type">TaskNotSerializableException</span> =&gt;</div><div class="line">          logError(<span class="string">s"Resource offer failed, task set <span class="subst">$&#123;taskSet.name&#125;</span> was not serializable"</span>)</div><div class="line">          <span class="comment">// Do not offer resources for this task, but don't throw an error to allow other</span></div><div class="line">          <span class="comment">// task sets to be submitted.</span></div><div class="line">          <span class="keyword">return</span> launchedTask</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span> launchedTask</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>TaskSchdulerImpl.resourceOfferSingleTaskSet通过调用taskSet.resourceOffer，为TaskDescription数组的数组tasks填充元素。<br>回到CoarseGrainedSchedulerBackend.makeOffers()方法，launchTasks(scheduler.resourceOffers(workOffers))即launchTasks(tasks)：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">def</span> <span class="title">launchTasks</span></span>(tasks: <span class="type">Seq</span>[<span class="type">Seq</span>[<span class="type">TaskDescription</span>]]) &#123;</div><div class="line">  <span class="keyword">for</span> (task &lt;- tasks.flatten) &#123;</div><div class="line">    <span class="keyword">val</span> serializedTask = ser.serialize(task)</div><div class="line">    <span class="keyword">if</span> (serializedTask.limit &gt;= akkaFrameSize - <span class="type">AkkaUtils</span>.reservedSizeBytes) &#123;</div><div class="line">      scheduler.taskIdToTaskSetManager.get(task.taskId).foreach &#123; taskSetMgr =&gt;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">          <span class="keyword">var</span> msg = <span class="string">"Serialized task %s:%d was %d bytes, which exceeds max allowed: "</span> +</div><div class="line">            <span class="string">"spark.akka.frameSize (%d bytes) - reserved (%d bytes). Consider increasing "</span> +</div><div class="line">            <span class="string">"spark.akka.frameSize or using broadcast variables for large values."</span></div><div class="line">          msg = msg.format(task.taskId, task.index, serializedTask.limit, akkaFrameSize,</div><div class="line">            <span class="type">AkkaUtils</span>.reservedSizeBytes)</div><div class="line">          taskSetMgr.abort(msg)</div><div class="line">        &#125; <span class="keyword">catch</span> &#123;</div><div class="line">          <span class="keyword">case</span> e: <span class="type">Exception</span> =&gt; logError(<span class="string">"Exception in error callback"</span>, e)</div><div class="line">        &#125;</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">else</span> &#123;</div><div class="line">      <span class="keyword">val</span> executorData = executorDataMap(task.executorId)</div><div class="line">      executorData.freeCores -= scheduler.<span class="type">CPUS_PER_TASK</span></div><div class="line">      executorData.executorEndpoint.send(<span class="type">LaunchTask</span>(<span class="keyword">new</span> <span class="type">SerializableBuffer</span>(serializedTask)))</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>launchTasks方法将task序列化，然后向执行该任务的executorEndpoint发送LaunchTask消息。</p>
+<h2 id="executor启动task"><a href="#executor启动task" class="headerlink" title="executor启动task"></a>executor启动task</h2><p>CoarseGrainedExecutorBackend收到LaunchTask消息：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">case</span> <span class="type">LaunchTask</span>(data) =&gt;</div><div class="line">  <span class="keyword">if</span> (executor == <span class="literal">null</span>) &#123;</div><div class="line">    logError(<span class="string">"Received LaunchTask command but executor was null"</span>)</div><div class="line">    <span class="type">System</span>.exit(<span class="number">1</span>)</div><div class="line">  &#125; <span class="keyword">else</span> &#123;</div><div class="line">    <span class="keyword">val</span> taskDesc = ser.deserialize[<span class="type">TaskDescription</span>](data.value)</div><div class="line">    logInfo(<span class="string">"Got assigned task "</span> + taskDesc.taskId)</div><div class="line">    executor.launchTask(<span class="keyword">this</span>, taskId = taskDesc.taskId, attemptNumber = taskDesc.attemptNumber,</div><div class="line">      taskDesc.name, taskDesc.serializedTask)</div><div class="line">  &#125;</div></pre></td></tr></table></figure></p>
+<p>执行Executor.launchTask方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">launchTask</span></span>(</div><div class="line">    context: <span class="type">ExecutorBackend</span>,</div><div class="line">    taskId: <span class="type">Long</span>,</div><div class="line">    attemptNumber: <span class="type">Int</span>,</div><div class="line">    taskName: <span class="type">String</span>,</div><div class="line">    serializedTask: <span class="type">ByteBuffer</span>): <span class="type">Unit</span> = &#123;</div><div class="line">  <span class="keyword">val</span> tr = <span class="keyword">new</span> <span class="type">TaskRunner</span>(context, taskId = taskId, attemptNumber = attemptNumber, taskName,</div><div class="line">    serializedTask)</div><div class="line">  runningTasks.put(taskId, tr)</div><div class="line">  threadPool.execute(tr)</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>Executor.launchTask方法创建TaskRunner对象tr，然后调用threadPool.execute(tr)启动线程运行TaskRunner。<br>TaskRunner继承Runnable，run()方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span></span>(): <span class="type">Unit</span> = &#123;</div><div class="line">  ……</div><div class="line">   <span class="keyword">try</span> &#123;</div><div class="line">    <span class="keyword">val</span> (taskFiles, taskJars, taskBytes) = <span class="type">Task</span>.deserializeWithDependencies(serializedTask)</div><div class="line">    updateDependencies(taskFiles, taskJars)</div><div class="line">    task = ser.deserialize[<span class="type">Task</span>[<span class="type">Any</span>]](taskBytes, <span class="type">Thread</span>.currentThread.getContextClassLoader)</div><div class="line">    task.setTaskMemoryManager(taskMemoryManager)</div><div class="line">    ……</div><div class="line">    <span class="keyword">val</span> (value, accumUpdates) = <span class="keyword">try</span> &#123;</div><div class="line">      <span class="keyword">val</span> res = task.run(</div><div class="line">        taskAttemptId = taskId,</div><div class="line">        attemptNumber = attemptNumber,</div><div class="line">        metricsSystem = env.metricsSystem)</div><div class="line">      threwException = <span class="literal">false</span></div><div class="line">      res</div><div class="line">    &#125;</div><div class="line">    ……</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>TaskRunner.run方法将序列化的任务serializedTask反序列化，得到Task对象，然后调用Task.run方法：<br><figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">final</span> <span class="function"><span class="keyword">def</span> <span class="title">run</span></span>(</div><div class="line">  taskAttemptId: <span class="type">Long</span>,</div><div class="line">  attemptNumber: <span class="type">Int</span>,</div><div class="line">  metricsSystem: <span class="type">MetricsSystem</span>)</div><div class="line">: (<span class="type">T</span>, <span class="type">AccumulatorUpdates</span>) = &#123;</div><div class="line">  context = <span class="keyword">new</span> <span class="type">TaskContextImpl</span>(</div><div class="line">    stageId,</div><div class="line">    partitionId,</div><div class="line">    taskAttemptId,</div><div class="line">    attemptNumber,</div><div class="line">    taskMemoryManager,</div><div class="line">    metricsSystem,</div><div class="line">    internalAccumulators,</div><div class="line">    runningLocally = <span class="literal">false</span>)</div><div class="line">  <span class="type">TaskContext</span>.setTaskContext(context)</div><div class="line">  context.taskMetrics.setHostname(<span class="type">Utils</span>.localHostName())</div><div class="line">  context.taskMetrics.setAccumulatorsUpdater(context.collectInternalAccumulators)</div><div class="line">  taskThread = <span class="type">Thread</span>.currentThread()</div><div class="line">  <span class="keyword">if</span> (_killed) &#123;</div><div class="line">    kill(interruptThread = <span class="literal">false</span>)</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">    (runTask(context), context.collectAccumulators())</div><div class="line">  &#125; <span class="keyword">finally</span> &#123;</div><div class="line">    context.markTaskCompleted()</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">      <span class="type">Utils</span>.tryLogNonFatalError &#123;</div><div class="line">        <span class="comment">// Release memory used by this thread for shuffles</span></div><div class="line">        <span class="type">SparkEnv</span>.get.shuffleMemoryManager.releaseMemoryForThisTask()</div><div class="line">      &#125;</div><div class="line">      <span class="type">Utils</span>.tryLogNonFatalError &#123;</div><div class="line">        <span class="comment">// Release memory used by this thread for unrolling blocks</span></div><div class="line">        <span class="type">SparkEnv</span>.get.blockManager.memoryStore.releaseUnrollMemoryForThisTask()</div><div class="line">      &#125;</div><div class="line">    &#125; <span class="keyword">finally</span> &#123;</div><div class="line">      <span class="type">TaskContext</span>.unset()</div><div class="line">    &#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>Task.run方法创建了TaskContextImpl对象，然后调用runTask方法。Task类是抽象类，runTask没有实现，Task有两个具体实现ShuffleMapTask和ResultTask，它们分别实现了自己的runTask方法。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag">#Spark</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/04/25/application-execution/" rel="next" title="应用执行过程分析">
+                <i class="fa fa-chevron-left"></i> 应用执行过程分析
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/04/28/scheduler-pool/" rel="prev" title="Spark任务调度模式分析">
+                Spark任务调度模式分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/04/26/RDD-to-task/"
+           data-title="RDD task的生成过程" data-url="http://yoursite.com/2016/04/26/RDD-to-task/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="Alex Lei" />
+          <p class="site-author-name" itemprop="name">Alex Lei</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">13</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/alexwanglei" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.zhihu.com/people/wang-lei-80-65-36" target="_blank" title="Zhihu">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  Zhihu
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#job-gt-stage"><span class="nav-number">1.</span> <span class="nav-text">job => stage</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stage-gt-taskSet"><span class="nav-number">2.</span> <span class="nav-text">stage => taskSet</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TaskSet-gt-Task"><span class="nav-number">3.</span> <span class="nav-text">TaskSet => Task</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#executor启动task"><span class="nav-number">4.</span> <span class="nav-text">executor启动task</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Alex Lei</span>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="http://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"alexlei"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="/vendors/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
