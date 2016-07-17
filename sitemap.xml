@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>http://yoursite.com/2016/05/05/task-run/</loc>
+    <lastmod>2016-05-05T09:02:06.412Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/26/RDD-to-task/</loc>
+    <lastmod>2016-05-05T05:52:09.812Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/28/scheduler-pool/</loc>
+    <lastmod>2016-04-28T08:17:59.933Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/25/application-execution/</loc>
+    <lastmod>2016-04-26T07:14:45.232Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/25/Submit-application-1/</loc>
+    <lastmod>2016-04-25T08:16:48.670Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/21/Slave-start/</loc>
+    <lastmod>2016-04-22T07:30:39.965Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/04/21/Master-start/</loc>
+    <lastmod>2016-04-21T05:53:13.634Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2015/12/18/RDD-paper/</loc>
+    <lastmod>2016-01-27T07:37:59.280Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2015/12/16/hello-world/</loc>
+    <lastmod>2015-12-16T09:21:32.446Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/tags/index.html</loc>
+    <lastmod>2015-12-16T03:45:46.402Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/categories/index.html</loc>
+    <lastmod>2015-12-16T03:08:10.332Z</lastmod>
+  </url>
+  
+</urlset>
