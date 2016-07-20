@@ -116,3 +116,5 @@ java.net.ConnectException: Connection refused
 	at org.apache.zookeeper.ClientCnxn$SendThread.run(ClientCnxn.java:1081)
 ```
 可以看到因为没有设置zookeeper的quorum，所以该节点上的客户端默认去连接localhost，但localhost又不是zookeeper的quorum，所以连接失败。zookeeper客户端会反复重连，反复失败，该节点上的spark任务得不到执行。
+
+## 从HBase读取RDD
