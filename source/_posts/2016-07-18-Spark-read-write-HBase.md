@@ -142,8 +142,9 @@ object ReadData {
     }
 }
 ```
+
 ### 提取数据
-通过newAPIHadoopRDD得到的RDD[(ImmutableBytesWritable,Result)]，需要进一步从Result中提取数据。
+通过newAPIHadoopRDD得到的RDD[(ImmutableBytesWritable,Result)]，需要进一步处理Result获取行、列和单元格等数据。HBase的Result类提供了以下方法：
 ```java
 public byte[] getRow()
 获取行键
@@ -153,4 +154,16 @@ public NavigableMap<byte[], byte[]> getFamilyMap(byte[] family)
 获取列簇下列限定符和对应值的Map
 public NavigableMap<byte[],NavigableMap<byte[],NavigableMap<Long,byte[]>>> getMap()
 获取列簇对列限定符和值的全部版本的Map
-``` 
+
+```
+
+### Tips
+java中的Map转换成scala中的Map:
+```scala
+import scala.collection.JavaConverters._
+val smap = jmap.asScala.toMap
+```
+spark通过foreach遍历输出rdd需要先调用collect：
+```scala
+rdd.collect.foreach(println)
+```
