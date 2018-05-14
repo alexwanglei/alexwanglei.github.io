@@ -2,6 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://yoursite.com/2016/05/24/start-ApplicationMaster-1/</loc>
+    <lastmod>2016-05-31T07:15:39.557Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/05/31/start-ApplicationMaster-3/</loc>
+    <lastmod>2016-05-31T06:10:05.833Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/05/26/start-ApplicationMaster-2/</loc>
+    <lastmod>2016-05-30T03:09:44.078Z</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://yoursite.com/2016/05/20/submit-job-to-yarn/</loc>
+    <lastmod>2016-05-24T06:19:35.627Z</lastmod>
+  </url>
+  
+  <url>
     <loc>http://yoursite.com/2016/05/05/task-run/</loc>
     <lastmod>2016-05-05T09:02:06.412Z</lastmod>
   </url>
