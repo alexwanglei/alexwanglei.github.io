@@ -1,0 +1,2 @@
+https://alexwanglei.github.io/posts/create_hugo_blog/
+https://alexwanglei.github.io/about/
